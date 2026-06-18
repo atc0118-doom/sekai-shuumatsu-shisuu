@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>終末観測盤 / 世界終末指数</title>
+<meta name="description" content="公開情報をもとに空・市場・海運・宇宙天気の異変を観測する世界終末指数。" />
+<script>
+const $=id=>document.getElementById(id);
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+function fmt(n){return Number(n||0).toLocaleString('ja-JP')}
+function jst(iso){return new Date(iso||Date.now()).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',hour12:false})}
+function localFallback(){
+  const bucket=Math.floor(Date.now()/900000);
+  const noise=o=>{const x=Math.sin((bucket+o)*999.123)*10000;return x-Math.floor(x)};
+  const air=Math.round(55+noise(1)*24),market=Math.round(48+noise(2)*28),shipping=Math.round(46+noise(3)*29),space=Math.round(34+noise(4)*25);
+  const doom=clamp(Math.round(air*.38+market*.22+shipping*.24+space*.16),0,100);
+  return {ok:false,updated:new Date().toISOString(),doom,level:doom>=85?'危険':doom>=70?'高':doom>=55?'中':'低',metrics:{air:{value:air,source:'推定値'},market:{value:market,source:'推定値'},shipping:{value:shipping,source:'推定値'},space:{value:space,source:'推定値'}},omens:['公開情報に細い揺らぎを検出','空のざわめきを継続監視','市場の怯えを観測中','海運の乱れを監視中','観測は続いている'],observers:{today:1100+Math.round(noise(5)*800),total:76000+Math.round(noise(6)*9000)}}
+}
+async function getDoom(){
+  try{
+    const r=await fetch('/api/doom',{cache:'no-store'});
+    if(!r.ok)throw new Error('api');
+    const d=await r.json();
+    if(!d || typeof d.doom!=='number')throw new Error('bad data');
+    return d;
+  }catch(e){return localFallback()}
+}
+function render(d){
+  $('updated').textContent=jst(d.updated)+' JST';
+  $('doom').textContent=d.doom;
+  $('level').textContent=d.level||'解析中';
+  $('bars').innerHTML='';
+  for(let i=0;i<14;i++){const b=document.createElement('div');b.className='bar '+(i<Math.round(d.doom/7.2)?'on':'');$('bars').appendChild(b)}
+  const m=d.metrics||{};
+  const rows=[
+    ['空のざわめき','航空活動指数',m.air?.value||0, m.air?.source||''],
+    ['市場の怯え','市場ストレス指数',m.market?.value||0, m.market?.source||''],
+    ['海運の乱れ','海運ストレス指数',m.shipping?.value||0, m.shipping?.source||''],
+    ['宇宙の異変','太陽風・磁気嵐指数',m.space?.value||0, m.space?.source||'']
+  ];
+  $('metrics').innerHTML=rows.map(r=>`<tr><td><b>${r[0]}</b><br><small>${r[1]} / ${r[3]}</small></td><td class="num">${r[2]}<small>/100</small></td><td class="up">${Math.max(0,Math.round((r[2]-45)/3))} ▲</td></tr>`).join('');
+  $('omens').innerHTML=(d.omens||[]).slice(0,5).map(x=>`<li>${x}</li>`).join('');
+  $('today').textContent=fmt(d.observers?.today||0);
+  $('total').textContent=fmt(d.observers?.total||0);
+  const base=d.doom||70; let pts=[],shade=[];
+  for(let i=0;i<38;i++){let v=clamp(base-25+Math.sin(i*.75)*9+((i*17)%23)+(i>31?12:0),20,98);let y=170-(v*1.55);let x=i*(700/37);pts.push(`${x},${y}`);shade.push(`${x},${y}`)}
+  $('line').setAttribute('points',pts.join(' '));$('shade').setAttribute('points',`0,170 ${shade.join(' ')} 700,170`);
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const hm=min=>`${pad((now.getHours()+Math.floor((now.getMinutes()-min)/60)+24)%24)}:${pad((now.getMinutes()-min+60)%60)}`;
+  const logs=[
+    [hm(0),'空のざわめき',rows[0][2]>=60?'航空活動が平常値を上回る':'航空活動を継続監視','+'+Math.max(1,Math.round(rows[0][2]/10))],
+    [hm(10),'市場の怯え',rows[1][2]>=58?'市場ストレス上昇を観測':'市場は不安定な揺らぎ','+'+Math.max(1,Math.round(rows[1][2]/12))],
+    [hm(20),'海運状況',rows[2][2]>=58?'海運ストレスが継続':'要衝周辺を監視中','+'+Math.max(1,Math.round(rows[2][2]/12))],
+    [hm(30),'宇宙天気',rows[3][2]>=50?'磁気圏の揺らぎを観測':'太陽風を監視中','+'+Math.max(1,Math.round(rows[3][2]/14))]
+  ];
+  $('log').innerHTML=logs.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td><td class="strong-red">${x[3]}</td></tr>`).join('');
+}
+async function tick(){render(await getDoom())}
+tick();setInterval(tick,300000);
+</script>
+</body>
+</html>
