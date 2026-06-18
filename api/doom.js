@@ -1,26 +1,168 @@
-const DAY_MS = 24 * 60 * 60 * 1000;
-function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-function round(n) { return Math.round(Number.isFinite(n) ? n : 0); }
-function bucketNoise(offset = 0) { const bucket = Math.floor(Date.now() / (15 * 60 * 1000)); const x = Math.sin((bucket + offset) * 999.123) * 10000; return x - Math.floor(x); }
-async function fetchWithTimeout(url, ms = 6500) { const ctrl = new AbortController(); const id = setTimeout(() => ctrl.abort(), ms); try { const r = await fetch(url, { signal: ctrl.signal, headers: { 'user-agent': 'sekai-shuumatsu-shisuu/3.0' } }); if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; } finally { clearTimeout(id); } }
-const regionsDef = [
-  { key:'middleEast', name:'中東方面', box:{lat:[12,38], lon:[30,65]}, base:55 },
-  { key:'taiwan', name:'台湾海峡方面', box:{lat:[18,30], lon:[115,125]}, base:48 },
-  { key:'blackSea', name:'黒海方面', box:{lat:[40,48], lon:[27,42]}, base:45 },
-  { key:'japan', name:'日本周辺', box:{lat:[24,46], lon:[123,148]}, base:38 },
-  { key:'arctic', name:'北極圏方面', box:{lat:[66,90], lon:[-180,180]}, base:30 },
-  { key:'usa', name:'米国本土方面', box:{lat:[25,50], lon:[-125,-66]}, base:34 }
-];
-function inBox(s, box){ const lon=Number(s[5]), lat=Number(s[6]); if(!Number.isFinite(lat)||!Number.isFinite(lon)) return false; return lat>=box.lat[0]&&lat<=box.lat[1]&&lon>=box.lon[0]&&lon<=box.lon[1]; }
-function isMil(s){ return String(s[1]||'').match(/RCH|ASY|CFC|VV|GAF|NATO|FORTE|JAKE|LAGR|QID|RRR|K35|KC|TANKER|PAT|DUKE|CNV|SAM|SPAR/i); }
-function isVip(s){ return String(s[1]||'').match(/GLEX|GLF|G650|G550|GIV|GV|CL60|C68A|E550|F900|FA7X|B350/i); }
-function fallbackRegions(){ return regionsDef.map((r,i)=>{ const score=clamp(round(r.base + bucketNoise(40+i)*32),12,96); return { name:r.name, score, risk:level(score), air:round(score*.45), sea:round(score*.28), signal:round(score*.27) }; }); }
-function buildRegions(states){ return regionsDef.map((r,i)=>{ const area=states.filter(s=>inBox(s,r.box)); const mil=area.filter(isMil).length; const vip=area.filter(isVip).length; const count=area.length; const score=clamp(round(r.base + count/45 + mil*7 + vip*3 + bucketNoise(50+i)*13),10,98); return { name:r.name, score, risk:level(score), air:clamp(round(28 + count/25 + mil*10 + vip*3),0,100), sea:clamp(round(r.base*.45 + bucketNoise(60+i)*35),0,100), signal:clamp(round(mil*10 + vip*4 + bucketNoise(70+i)*45),0,100), count, militaryHints:mil, vipHints:vip }; }).sort((a,b)=>b.score-a.score); }
-async function getAirAndRegions() { try { const r = await fetchWithTimeout('https://opensky-network.org/api/states/all', 8000); const j = await r.json(); const states = Array.isArray(j.states) ? j.states : []; const count = states.length; const militaryHints = states.filter(isMil).length; const vipHints = states.filter(isVip).length; const regions = buildRegions(states); const regionPeak = Math.max(...regions.map(x=>x.score)); const air = clamp(round(34 + count / 900 + militaryHints * 1.8 + vipHints * 0.6 + regionPeak*.1), 25, 96); return { air:{ value: air, raw: count, militaryHints, vipHints, delta: round(-4 + bucketNoise(11) * 18), source: `航空活動${count}件 / 特殊機候補${militaryHints} / VIP候補${vipHints}` }, regions }; } catch (e) { const v = round(58 + bucketNoise(1) * 28); return { air:{ value: v, raw: null, militaryHints: null, vipHints: null, delta: round(-3 + bucketNoise(12) * 16), source: '航空活動の変化を観測' }, regions:fallbackRegions() }; } }
-async function getFearGreed() { try { const r = await fetchWithTimeout('https://api.alternative.me/fng/?limit=2&format=json', 5500); const j = await r.json(); const data = j.data || []; const now = Number(data[0]?.value); const prev = Number(data[1]?.value ?? now); const stress = clamp(round(100 - now), 5, 95); return { value: stress, raw: now, delta: round((100-now) - (100-prev)), source: `市場心理指数 ${now}` }; } catch (e) { const v = round(48 + bucketNoise(2) * 30); return { value: v, raw: null, delta: round(-4 + bucketNoise(13) * 13), source: '市場心理の揺れを観測' }; } }
-async function getSolar() { try { const r = await fetchWithTimeout('https://services.swpc.noaa.gov/json/planetary_k_index_1m.json', 5500); const arr = await r.json(); const last = Array.isArray(arr) ? arr.slice(-30) : []; const kp = Math.max(...last.map(x => Number(x.kp_index || x.kp || 0))); const val = clamp(round(kp * 14 + bucketNoise(3) * 8), 5, 95); return { value: val, raw: kp, delta: round(bucketNoise(14) * 9), source: `磁気圏指数 ${kp}` }; } catch(e) { const v = round(32 + bucketNoise(4) * 38); return { value: v, raw: null, delta: round(bucketNoise(15) * 8), source: '太陽活動のざわめきを観測' }; } }
-async function getShipping() { const v = round(46 + bucketNoise(5) * 30); return { value: v, raw: null, delta: round(-2 + bucketNoise(16) * 12), source: '海運の乱れを観測' }; }
-function level(doom) { if (doom >= 80) return '高'; if (doom >= 50) return '中'; return '低'; }
-function makeOmens(metrics, regions) { const o=[]; const top=(regions||[])[0]; if(top) o.push(`${top.name}：災厄信号 ${top.score} / 危険度 ${top.risk}`); if(metrics.air.militaryHints!==null) o.push(`空のざわめき：航空活動${metrics.air.raw}件、特殊機候補${metrics.air.militaryHints}件を観測`); else o.push('空のざわめき：航空活動の変化を観測'); if(metrics.air.vipHints) o.push(`VIP機候補：${metrics.air.vipHints}件のビジネスジェット系シグナル`); if(metrics.market.value>55) o.push('市場の怯え：避難心理が強まりつつある'); if(metrics.shipping.value>55) o.push('海運の乱れ：航路ストレスが上昇傾向'); if(metrics.solar.value>50) o.push('宇宙の異変：太陽風・磁気圏のざわめきを観測'); return o.slice(0,6); }
-function makeLogs(metrics, regions) { const now = new Date(); const time = m => new Date(now.getTime()-m*60000).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hour12:false}); const base=(regions||[]).slice(0,4).map((r,i)=>[time(5+i*9),r.name,`${r.name}で災厄信号を観測`, `+${Math.round(r.score/10)}`]); return base.concat([[time(44),'航空活動',metrics.air.source,`+${Math.max(0,metrics.air.delta)}`],[time(55),'市場心理',metrics.market.source,`+${Math.max(0,metrics.market.delta)}`]]); }
-export default async function handler(req, res) { res.setHeader('Access-Control-Allow-Origin','*'); res.setHeader('Cache-Control','s-maxage=300, stale-while-revalidate=600'); const [{air,regions}, market, shipping, solar] = await Promise.all([getAirAndRegions(), getFearGreed(), getShipping(), getSolar()]); const regionPeak = Math.max(...regions.map(r=>r.score)); const doom = clamp(round(air.value*.32 + market.value*.20 + shipping.value*.15 + solar.value*.12 + regionPeak*.21),0,100); const previous = clamp(round(doom - (-5 + bucketNoise(22)*13)),0,100); const metrics={air,market,shipping,solar}; res.status(200).json({ ok:true, updated:new Date().toISOString(), doom, previous, delta:doom-previous, level:level(doom), metrics, regions, omens:makeOmens(metrics, regions), logs:makeLogs(metrics, regions), observers:{ real:false, today:null, total:null } }); }
+// SAT-SYS-01 / free enhanced doom API
+// Vercel Serverless Function. Uses free public endpoints where possible.
+
+const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, Math.round(Number(n) || 0)));
+
+async function fetchJson(url, timeoutMs = 6500) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'user-agent': 'SAT-SYS-01/1.0' },
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error(`${res.status} ${url}`);
+    return await res.json();
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+function pseudo(seed, base = 50, amp = 20) {
+  const x = Math.sin(seed) * 10000;
+  return clamp(base + (x - Math.floor(x) - 0.5) * amp * 2);
+}
+
+async function airMetric() {
+  try {
+    const data = await fetchJson('https://opensky-network.org/api/states/all', 8000);
+    const states = Array.isArray(data.states) ? data.states : [];
+    const total = states.length;
+    const airborne = states.filter(s => s && s[8] === false).length;
+    const highAlt = states.filter(s => s && Number(s[7]) > 9000).length;
+    const fast = states.filter(s => s && Number(s[9]) > 230).length;
+    const specialCandidate = states.filter(s => {
+      const cs = String(s?.[1] || '').trim().toUpperCase();
+      return /(^RCH|^CNV|^VV|^HKY|^NATO|^ASY|^GAF|^IAM|^RRR|^CFC|^BAF|^AF|KC|TANKER|REACH|FORTE|JAKE|RAVEN)/.test(cs);
+    }).length;
+    const score = clamp(30 + total / 220 + airborne / 260 + highAlt / 300 + fast / 220 + specialCandidate * 1.8);
+    return {
+      value: score,
+      raw: { total, airborne, highAlt, fast, specialCandidate },
+      label: specialCandidate > 20 ? '特殊機候補を複数観測' : '航空活動を観測',
+      source: 'OpenSky'
+    };
+  } catch (e) {
+    const seed = Date.now() / 3600000;
+    return {
+      value: pseudo(seed, 56, 13),
+      raw: { total: null, airborne: null, specialCandidate: null },
+      label: '航空活動を推定観測',
+      source: '推定'
+    };
+  }
+}
+
+async function solarMetric() {
+  try {
+    const [kp, flare] = await Promise.allSettled([
+      fetchJson('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', 6500),
+      fetchJson('https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json', 6500)
+    ]);
+    let kpMax = 0;
+    if (kp.status === 'fulfilled' && Array.isArray(kp.value)) {
+      const rows = kp.value.slice(1).slice(-16);
+      kpMax = Math.max(...rows.map(r => Number(r[1]) || 0), 0);
+    }
+    let xrayMax = 0;
+    if (flare.status === 'fulfilled' && Array.isArray(flare.value)) {
+      xrayMax = Math.max(...flare.value.slice(-240).map(r => Number(r.flux) || 0), 0);
+    }
+    const flareScore = xrayMax > 1e-4 ? 95 : xrayMax > 1e-5 ? 78 : xrayMax > 1e-6 ? 58 : xrayMax > 1e-7 ? 38 : 22;
+    const score = clamp(kpMax * 11 + flareScore * 0.35);
+    return { value: score, raw: { kpMax, xrayMax }, label: kpMax >= 5 ? '磁気嵐傾向' : '太陽活動を観測', source: 'NOAA' };
+  } catch (e) {
+    const seed = Date.now() / 4200000;
+    return { value: pseudo(seed, 42, 16), raw: {}, label: '太陽活動を推定観測', source: '推定' };
+  }
+}
+
+async function marketMetric() {
+  // Fully free/no-key finance APIs are unstable. This uses public Yahoo chart endpoints with fallback.
+  try {
+    const [vix, oil, gold] = await Promise.allSettled([
+      fetchJson('https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=5d&interval=1d', 6500),
+      fetchJson('https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?range=5d&interval=1d', 6500),
+      fetchJson('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?range=5d&interval=1d', 6500)
+    ]);
+    function lastClose(payload) {
+      const r = payload?.chart?.result?.[0];
+      const close = r?.indicators?.quote?.[0]?.close || [];
+      const vals = close.filter(v => typeof v === 'number');
+      return vals[vals.length - 1];
+    }
+    function pct(payload) {
+      const r = payload?.chart?.result?.[0];
+      const close = (r?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
+      if (close.length < 2) return 0;
+      return ((close[close.length - 1] - close[0]) / close[0]) * 100;
+    }
+    const vixVal = vix.status === 'fulfilled' ? lastClose(vix.value) : null;
+    const oilPct = oil.status === 'fulfilled' ? pct(oil.value) : 0;
+    const goldPct = gold.status === 'fulfilled' ? pct(gold.value) : 0;
+    const score = clamp((vixVal || 18) * 2.4 + Math.max(oilPct, 0) * 3 + Math.max(goldPct, 0) * 2);
+    return { value: score, raw: { vix: vixVal, oilPct, goldPct }, label: score >= 70 ? '市場心理に強い怯え' : '市場心理を観測', source: 'Yahoo public chart' };
+  } catch (e) {
+    const seed = Date.now() / 5100000;
+    return { value: pseudo(seed, 50, 18), raw: {}, label: '市場心理を推定観測', source: '推定' };
+  }
+}
+
+function shippingMetric(air, market) {
+  // Free AIS is not reliably available without keys. Estimate shipping stress from air/market + time waves.
+  const seed = Date.now() / 6200000;
+  const wave = pseudo(seed, 50, 12);
+  const value = clamp(air.value * 0.22 + market.value * 0.38 + wave * 0.40);
+  return { value, raw: { inferredFrom: ['air', 'market'] }, label: value >= 70 ? '海運の乱れが増幅' : '海運の乱れを推定観測', source: '推定' };
+}
+
+function level(score) {
+  if (score >= 85) return { level: '異常', roman: 'Ⅴ' };
+  if (score >= 70) return { level: '危険', roman: 'Ⅳ' };
+  if (score >= 50) return { level: '警戒', roman: 'Ⅲ' };
+  if (score >= 30) return { level: '注意', roman: 'Ⅱ' };
+  return { level: '平常', roman: 'Ⅰ' };
+}
+
+function regional(metrics) {
+  const { air, market, shipping, solar } = metrics;
+  const regions = [
+    ['中東方面', air.value * .42 + shipping.value * .34 + market.value * .18 + 10],
+    ['台湾海峡方面', air.value * .46 + shipping.value * .24 + solar.value * .12 + 8],
+    ['黒海方面', air.value * .34 + market.value * .30 + shipping.value * .24 + 6],
+    ['日本周辺', air.value * .28 + solar.value * .34 + shipping.value * .20 + 4],
+    ['米国本土方面', market.value * .42 + air.value * .24 + solar.value * .16 + 4],
+    ['北極圏方面', solar.value * .45 + air.value * .20 + 8]
+  ];
+  return regions.map(([name, score]) => ({ name, score: clamp(score) })).sort((a, b) => b.score - a.score);
+}
+
+export default async function handler(req, res) {
+  try {
+    const [air, market, solar] = await Promise.all([airMetric(), marketMetric(), solarMetric()]);
+    const shipping = shippingMetric(air, market);
+    const doom = clamp(air.value * .34 + market.value * .26 + shipping.value * .24 + solar.value * .16);
+    const lv = level(doom);
+    const metrics = { air, market, shipping, solar };
+    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+    res.status(200).json({
+      ok: true,
+      updatedAt: new Date().toISOString(),
+      doom,
+      level: lv.level,
+      roman: lv.roman,
+      metrics,
+      regions: regional(metrics)
+    });
+  } catch (e) {
+    const air = { value: 55, source: 'fallback', label: '航空活動を推定観測', raw: {} };
+    const market = { value: 48, source: 'fallback', label: '市場心理を推定観測', raw: {} };
+    const solar = { value: 36, source: 'fallback', label: '太陽活動を推定観測', raw: {} };
+    const shipping = shippingMetric(air, market);
+    const doom = clamp(air.value * .34 + market.value * .26 + shipping.value * .24 + solar.value * .16);
+    const lv = level(doom);
+    const metrics = { air, market, shipping, solar };
+    res.status(200).json({ ok: true, updatedAt: new Date().toISOString(), doom, level: lv.level, roman: lv.roman, metrics, regions: regional(metrics), fallback: true });
+  }
+}
