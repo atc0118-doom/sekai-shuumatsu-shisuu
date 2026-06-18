@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>終末観測盤 / 世界終末指数</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Share+Tech+Mono&display=swap');
+:root{--bg:#020000;--paper:#090000;--ink:#f2e8e8;--red:#ff1010;--deep:#7a0000;--muted:#c8a8a8;--line:#8a1717;--dim:#240000;--hot:#ff3b3b}
+*{box-sizing:border-box}html{background:#000}body{margin:0;background:radial-gradient(circle at 20% 0,#410000 0,#120000 32%,#020000 68%,#000);color:var(--ink);font-family:'Noto Serif JP',serif;letter-spacing:.03em;min-height:100vh}body:before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,0,0,.09) 0 1px,transparent 1px 5px),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 7px),radial-gradient(circle,transparent 42%,rgba(0,0,0,.74));mix-blend-mode:screen;opacity:.55}body:after{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 0 42%,rgba(255,0,0,.08) 45%,transparent 48%);animation:scan 6s linear infinite}@keyframes scan{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.wrap{max-width:1180px;margin:0 auto;padding:24px}.top{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;border-bottom:4px solid var(--red);padding-bottom:14px;color:#fff;font-size:18px;text-shadow:2px 2px 0 var(--red)}.top div{background:linear-gradient(90deg,#360000,#070000);border:1px solid var(--line);padding:8px 10px}.hero{display:grid;grid-template-columns:1.25fr .85fr;gap:28px;margin:34px 0}.panel{background:linear-gradient(180deg,rgba(34,0,0,.96),rgba(0,0,0,.96));border:1px solid var(--line);box-shadow:12px 12px 0 rgba(255,0,0,.16),inset 0 0 48px rgba(255,0,0,.13);padding:28px;position:relative}.panel:before{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.05);pointer-events:none}.logo{font-size:clamp(76px,14vw,190px);line-height:.78;font-weight:900;letter-spacing:-.11em;position:relative;color:#f8f0f0;text-shadow:6px 6px 0 #000,-5px -4px 0 var(--red),14px 8px 0 rgba(255,0,0,.8),0 0 22px rgba(255,0,0,.55);filter:contrast(1.3)}.logo:before{content:"終末\A 観測盤";white-space:pre;position:absolute;left:-14px;top:-10px;color:var(--red);z-index:-1;opacity:.95}.subtitle{color:#fff;font-size:clamp(30px,5vw,58px);letter-spacing:.2em;margin-top:28px;border-top:6px solid var(--red);display:inline-block;padding-top:18px;text-shadow:3px 3px 0 var(--deep)}.note{margin-top:20px;color:#f0cccc;font-size:18px}.sys{font-family:'Share Tech Mono',monospace}.statusHead{display:flex;justify-content:space-between;gap:12px;font-size:20px}.pulse{display:inline-block;width:22px;height:22px;border-radius:50%;background:#fff;margin-left:10px;box-shadow:0 0 8px #fff,0 0 28px var(--red),0 0 46px var(--red)}.hr{border-top:1px solid var(--line);margin:24px 0}.label{color:var(--red);font-size:24px;margin-bottom:8px;text-shadow:2px 2px 0 #000}.doom{font-family:'Share Tech Mono',monospace;color:var(--red);font-size:clamp(86px,15vw,160px);line-height:.9;text-shadow:0 0 22px rgba(255,0,0,.75),5px 5px 0 #000}.doom small{font-size:32px;color:#eee}.level{font-size:26px;margin-top:14px}.bars{display:flex;gap:9px;margin-top:24px}.bar{width:28px;height:32px;background:#170000;border:1px solid #3b0000}.bar.on{background:linear-gradient(#ff3b3b,#a00000);box-shadow:0 0 16px rgba(255,0,0,.65)}.grid{display:grid;grid-template-columns:1fr 1.1fr;gap:24px;margin-bottom:24px}h2{margin:0 0 20px;color:#fff;font-size:clamp(28px,4vw,46px);border-bottom:2px solid var(--red);padding-bottom:12px;text-shadow:3px 3px 0 var(--red)}.omens{list-style:none;padding:0;margin:0}.omens li{font-size:21px;line-height:1.75;margin:6px 0}.omens li:before{content:"■";color:var(--red);margin-right:12px;text-shadow:0 0 10px var(--red)}.metrics{width:100%;border-collapse:collapse;font-size:18px}.metrics td,.metrics th{border-bottom:1px solid rgba(255,0,0,.34);padding:13px 8px;vertical-align:middle}.metrics th{color:#ffd6d6;text-align:left}.metricName{font-size:22px;color:#fff}.metricSub{font-size:13px;color:#e0aaaa}.num{font-family:'Share Tech Mono',monospace;font-size:46px;color:#fff;text-shadow:0 0 12px rgba(255,0,0,.5)}.delta{font-family:'Share Tech Mono',monospace;color:var(--red);font-size:26px}.regionGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.region{border:1px solid rgba(255,0,0,.4);background:linear-gradient(90deg,rgba(80,0,0,.88),rgba(7,0,0,.92));padding:14px}.regionTop{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.regionName{font-size:22px;color:#fff}.regionScore{font-family:'Share Tech Mono',monospace;font-size:34px;color:var(--red);text-shadow:0 0 14px var(--red)}.risk{font-size:16px;color:#ffd0d0}.regionBar{height:12px;background:#190000;border:1px solid #4a0000;margin:10px 0;position:relative}.regionFill{height:100%;background:linear-gradient(90deg,#7a0000,#ff1717);box-shadow:0 0 16px rgba(255,0,0,.6);width:0}.regionMeta{font-size:13px;color:#ddb0b0;line-height:1.6}.wide{display:grid;grid-template-columns:1.25fr .75fr;gap:24px}.miniChart{height:220px;border:1px solid #520000;background:linear-gradient(transparent 24%,rgba(255,0,0,.16) 25%,transparent 26%),linear-gradient(90deg,transparent 24%,rgba(255,0,0,.12) 25%,transparent 26%);background-size:80px 44px;position:relative;overflow:hidden}.spark{position:absolute;left:0;right:0;bottom:0;height:100%;clip-path:polygon(0 60%,8% 52%,16% 68%,24% 44%,32% 58%,40% 38%,48% 54%,56% 35%,64% 48%,72% 28%,80% 40%,88% 18%,100% 25%,100% 100%,0 100%);background:linear-gradient(180deg,rgba(255,0,0,.9),rgba(255,0,0,.04))}.observers .big{font-family:'Share Tech Mono',monospace;color:var(--red);font-size:70px}.logTable{width:100%;border-collapse:collapse;font-size:17px}.logTable td,.logTable th{border-bottom:1px solid rgba(255,0,0,.28);padding:12px 8px;text-align:left}.warn{font-size:18px;line-height:1.9}.foot{border-top:1px solid var(--red);margin-top:26px;padding-top:16px;color:#dca4a4;display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace}.tiny{color:#d8a0a0;font-size:14px;margin-top:10px}.sourceTag{font-size:13px;color:#e6a8a8}.seal{display:inline-block;background:var(--red);color:#000;padding:2px 8px;margin-left:8px;font-weight:900}@media(max-width:760px){.wrap{padding:20px 14px}.top{grid-template-columns:1fr 1fr;font-size:16px}.hero,.grid,.wide{grid-template-columns:1fr}.panel{padding:24px 18px}.logo{font-size:88px}.subtitle{font-size:32px}.doom{font-size:104px}.metrics{font-size:15px}.metricName{font-size:18px}.num{font-size:38px}.foot{display:block}.wide{gap:18px}.regionGrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top"><div>世界終末指数</div><div>終末観測</div><div>方面別災厄</div><div>観測記録</div></nav>
+  <section class="hero">
+    <div class="panel">
+      <div class="logo">終末<br>観測盤</div>
+      <div class="subtitle">世界終末指数</div>
+      <p class="note">空・市場・海・太陽・方面別兆候を合成する災厄観測端末。</p>
+      <p class="note" style="color:var(--red)">SAT-SYS-01 <span class="seal">警戒運用</span></p>
+    </div>
+    <div class="panel">
+      <div class="statusHead"><span>監視システム：稼働中 <span class="pulse"></span></span><span class="sys">SAT.SYS-01</span></div>
+      <div class="hr"></div>
+      <div class="label">最終更新</div>
+      <div id="updated" class="sys" style="font-size:22px">取得中</div>
+      <div class="label" style="margin-top:28px">災厄合成指数</div>
+      <div class="doom"><span id="doom">--</span><small>/100</small></div>
+      <div class="level">危険度：<span id="level">解析中</span></div>
+      <div id="bars" class="bars"></div>
+      <div class="tiny">観測網：<span id="apiState">待機中</span></div>
+    </div>
+  </section>
+  <section class="grid">
+    <div class="panel">
+      <h2>本日の凶兆</h2>
+      <ul id="omens" class="omens"><li>観測網を起動中</li></ul>
+      <p class="note" style="color:var(--red)">赤信号を拾え。沈黙した地域ほど不穏である。</p>
+    </div>
+    <div class="panel">
+      <h2>観測記録 <span class="sourceTag">過去24時間</span></h2>
+      <table class="metrics">
+        <thead><tr><th>指標</th><th>現在値</th><th>前日比</th></tr></thead>
+        <tbody>
+          <tr><td><div class="metricName">空のざわめき</div><div class="metricSub">航空活動指数</div></td><td><span id="air" class="num">--</span>/100</td><td id="airDelta" class="delta">--</td></tr>
+          <tr><td><div class="metricName">市場の怯え</div><div class="metricSub">避難心理指数</div></td><td><span id="market" class="num">--</span>/100</td><td id="marketDelta" class="delta">--</td></tr>
+          <tr><td><div class="metricName">海運の乱れ</div><div class="metricSub">航路ストレス指数</div></td><td><span id="shipping" class="num">--</span>/100</td><td id="shippingDelta" class="delta">--</td></tr>
+          <tr><td><div class="metricName">宇宙の異変</div><div class="metricSub">太陽風・磁気嵐指数</div></td><td><span id="solar" class="num">--</span>/100</td><td id="solarDelta" class="delta">--</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="panel" style="margin-bottom:24px">
+    <h2>方面別災厄指数 <span class="sourceTag">地域別観測</span></h2>
+    <div id="regions" class="regionGrid"></div>
+  </section>
+  <section class="wide">
+    <div class="panel">
+      <h2>災厄合成指数 <span class="sourceTag">推移</span></h2>
+      <div class="miniChart"><div class="spark" id="spark"></div></div>
+    </div>
+    <div class="panel observers">
+      <h2>観測者数</h2>
+      <div>現在の観測者</div><div id="todayObs" class="big">非公開</div>
+      <div class="hr"></div>
+      <div>累計観測者数</div><div id="totalObs" class="big" style="font-size:44px;color:#eee">非公開</div>
+    </div>
+  </section>
+  <section class="wide" style="margin-top:24px">
+    <div class="panel">
+      <h2>方面別観測ログ</h2>
+      <table class="logTable"><thead><tr><th>時刻</th><th>方面</th><th>内容</th><th>影響</th></tr></thead><tbody id="logBody"></tbody></table>
+    </div>
+    <div class="panel">
+      <h2>警告</h2>
+      <p class="warn">観測値には遅延・欠落・誤差が混入する。これは予言ではない。異変を見逃さぬための記録である。</p>
+      <p class="warn" style="color:var(--red)">SYSTEM RED<br>災厄信号、監視中。</p>
+    </div>
+  </section>
+  <footer class="foot"><div>終末観測盤 / 世界終末指数</div><div>SAT-SYS-01 / RED OBSERVATION</div></footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function jst(iso){try{return new Date(iso).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',hour12:false})+' JST'}catch(e){return new Date().toLocaleString('ja-JP')+' JST'}}
+function pseudoRegion(){const names=['中東方面','台湾海峡方面','黒海方面','日本周辺','北極圏方面','米国本土方面'];const b=Math.floor(Date.now()/900000);return names.map((name,i)=>{const n=Math.sin((b+i+3)*1234.56)*10000;const r=n-Math.floor(n);const score=Math.round(28+r*48+(i===0?10:0));return {name,score:Math.min(96,score),risk:score>75?'高':score>50?'中':'低',air:Math.round(score*.45),sea:Math.round(score*.3),signal:Math.round(score*.25)}})}
+function localFallback(){const b=Math.floor(Date.now()/900000);const n=o=>{const x=Math.sin((b+o)*999.123)*10000;return x-Math.floor(x)};const air=Math.round(58+n(1)*28),market=Math.round(48+n(2)*30),shipping=Math.round(46+n(3)*30),solar=Math.round(32+n(4)*38);const regions=pseudoRegion();const doom=Math.round(air*.34+market*.22+shipping*.18+solar*.12+Math.max(...regions.map(r=>r.score))*.14);return {ok:false,updated:new Date().toISOString(),doom,previous:doom-3,delta:3,level:doom>78?'高':doom>50?'中':'低',metrics:{air:{value:air,delta:Math.round(n(5)*12)},market:{value:market,delta:Math.round(n(6)*10)},shipping:{value:shipping,delta:Math.round(n(7)*10)},solar:{value:solar,delta:Math.round(n(8)*8)}},regions,omens:['中東方面で赤信号を観測','台湾海峡方面に警戒値','空のざわめきが増幅','市場の怯えが継続'],logs:[]}}
+async function load(){try{const r=await fetch('/api/doom?ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('api');const d=await r.json();if(!d||typeof d.doom!=='number')throw new Error('bad');return d}catch(e){return localFallback()}}
+function deltaText(v){const n=Number(v||0);return (n>=0?'+':'')+n+' ↑'}
+function risk(score){return score>=78?'高':score>=50?'中':'低'}
+function renderRegions(regions){$('regions').innerHTML=(regions||pseudoRegion()).map(r=>`<div class="region"><div class="regionTop"><div><div class="regionName">${r.name}</div><div class="risk">危険度：${r.risk||risk(r.score)}</div></div><div class="regionScore">${r.score}</div></div><div class="regionBar"><div class="regionFill" style="width:${Math.max(3,Math.min(100,r.score))}%"></div></div><div class="regionMeta">空 ${r.air??'--'} / 海 ${r.sea??'--'} / 信号 ${r.signal??'--'}</div></div>`).join('')}
+function render(d){$('updated').textContent=jst(d.updated);$('doom').textContent=d.doom;$('level').textContent=d.level||'不明';$('apiState').textContent='稼働中';$('bars').innerHTML='';for(let i=0;i<14;i++){const div=document.createElement('div');div.className='bar '+(i<Math.round(d.doom/100*14)?'on':'');$('bars').appendChild(div)};const m=d.metrics||{};['air','market','shipping','solar'].forEach(k=>{if(m[k]){$(k).textContent=m[k].value;$(k+'Delta').textContent=deltaText(m[k].delta)}});renderRegions(d.regions);$('omens').innerHTML=(d.omens||[]).slice(0,6).map(x=>'<li>'+x+'</li>').join('');const logs=d.logs&&d.logs.length?d.logs:(d.regions||pseudoRegion()).slice(0,4).map((r,i)=>['--:--',r.name,`${r.name}の災厄信号を観測`,'+'+Math.round(r.score/10)]);$('logBody').innerHTML=logs.map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td style="color:var(--red)">'+r[3]+'</td></tr>').join('');$('todayObs').textContent='非公開';$('totalObs').textContent='非公開'}
+load().then(render);setInterval(()=>load().then(render),5*60*1000);
+</script>
+</body>
+</html>
