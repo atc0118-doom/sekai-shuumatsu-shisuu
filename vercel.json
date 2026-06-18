@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/doom.js": {
+      "maxDuration": 10
+    }
+  }
+}
