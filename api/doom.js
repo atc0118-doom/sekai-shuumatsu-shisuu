@@ -1,4 +1,4 @@
-// SAT-SYS-01 / Ver3.5 GDELT enhanced doom API
+// SAT-SYS-01 / Ver3.5 Crisis News API
 // Vercel Serverless Function. Uses free public endpoints where possible.
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, Math.round(Number(n) || 0)));
@@ -40,7 +40,7 @@ async function airMetric() {
     return { value: score, raw: { total, airborne, highAlt, fast, specialCandidate }, label: specialCandidate > 20 ? '特殊機候補を複数観測' : '航空活動を観測', source: 'OpenSky' };
   } catch (e) {
     const seed = Date.now() / 3600000;
-    return { value: pseudo(seed, 56, 13), raw: { total: null, airborne: null, specialCandidate: null }, label: '航空活動を推定観測', source: '推定' };
+    return { value: pseudo(seed, 56, 13), raw: {}, label: '航空活動を推定観測', source: '推定' };
   }
 }
 
@@ -75,17 +75,8 @@ async function marketMetric() {
       fetchJson('https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?range=5d&interval=1d', 6500),
       fetchJson('https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?range=5d&interval=1d', 6500)
     ]);
-    function lastClose(payload) {
-      const r = payload?.chart?.result?.[0];
-      const vals = (r?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
-      return vals[vals.length - 1];
-    }
-    function pct(payload) {
-      const r = payload?.chart?.result?.[0];
-      const close = (r?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
-      if (close.length < 2) return 0;
-      return ((close[close.length - 1] - close[0]) / close[0]) * 100;
-    }
+    function lastClose(payload) { const r = payload?.chart?.result?.[0]; const close = r?.indicators?.quote?.[0]?.close || []; const vals = close.filter(v => typeof v === 'number'); return vals[vals.length - 1]; }
+    function pct(payload) { const r = payload?.chart?.result?.[0]; const close = (r?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number'); if (close.length < 2) return 0; return ((close[close.length - 1] - close[0]) / close[0]) * 100; }
     const vixVal = vix.status === 'fulfilled' ? lastClose(vix.value) : null;
     const oilPct = oil.status === 'fulfilled' ? pct(oil.value) : 0;
     const goldPct = gold.status === 'fulfilled' ? pct(gold.value) : 0;
@@ -97,35 +88,30 @@ async function marketMetric() {
   }
 }
 
-async function gdeltCount(query, timeoutMs = 5500) {
-  const url = 'https://api.gdeltproject.org/api/v2/doc/doc?format=json&mode=artlist&maxrecords=75&timespan=24h&sort=hybridrel&query=' + encodeURIComponent(query);
-  const data = await fetchJson(url, timeoutMs);
-  const arts = Array.isArray(data.articles) ? data.articles : [];
-  return arts.length;
-}
-
-async function worldMetric() {
-  const queries = {
-    '中東方面': '(Iran OR Israel OR Gaza OR Hezbollah OR "Red Sea" OR Yemen) (war OR attack OR missile OR conflict OR crisis)',
-    '台湾海峡方面': '(Taiwan OR "Taiwan Strait" OR China OR PLA) (military OR drill OR incursion OR tension OR conflict)',
-    '黒海方面': '(Ukraine OR Russia OR "Black Sea" OR Crimea) (war OR missile OR drone OR attack OR conflict)',
-    '日本周辺': '(Japan OR "East China Sea" OR "North Korea" OR missile) (military OR alert OR launch OR tension)',
-    '米国本土方面': '(United States OR America OR Pentagon) (terror OR cyberattack OR emergency OR crisis OR threat)',
-    '北極圏方面': '(Arctic OR Greenland OR "Northern Sea Route") (military OR Russia OR NATO OR tension)'
-  };
+async function crisisMetric() {
+  const queries = [
+    { key: 'middleEast', name: '中東方面', q: '(iran OR israel OR gaza OR hamas OR lebanon OR yemen) (war OR conflict OR missile OR attack OR military OR nuclear)' },
+    { key: 'taiwan', name: '台湾海峡方面', q: '(taiwan OR "taiwan strait" OR china) (military OR invasion OR missile OR war OR conflict)' },
+    { key: 'blackSea', name: '黒海方面', q: '(ukraine OR russia OR "black sea") (war OR missile OR attack OR military OR invasion)' },
+    { key: 'japan', name: '日本周辺', q: '(japan OR korea OR "east china sea" OR "south china sea") (missile OR military OR nuclear OR threat)' },
+    { key: 'us', name: '米国本土方面', q: '(united states OR america OR usa) (terror OR cyberattack OR attack OR crisis OR nuclear)' },
+    { key: 'arctic', name: '北極圏方面', q: '(arctic OR greenland OR norway OR baltic) (military OR russia OR nato OR conflict)' }
+  ];
   try {
-    const results = await Promise.allSettled(Object.entries(queries).map(async ([name, q]) => [name, await gdeltCount(q)]));
-    const regionNews = {};
-    for (const r of results) if (r.status === 'fulfilled') regionNews[r.value[0]] = r.value[1];
-    const counts = Object.values(regionNews);
-    if (!counts.length) throw new Error('no gdelt data');
-    const max = Math.max(...counts, 1);
-    const avg = counts.reduce((a,b)=>a+b,0)/counts.length;
-    const score = clamp(24 + avg * 1.4 + max * 0.75);
-    return { value: score, raw: { regionNews }, label: score >= 70 ? '世界関連報道が増幅' : '世界情勢報道を観測', source: 'GDELT' };
+    const results = await Promise.allSettled(queries.map(async item => {
+      const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent(item.q) + '&mode=ArtList&format=json&maxrecords=75&sort=HybridRel&timespan=24h';
+      const data = await fetchJson(url, 7000);
+      const articles = Array.isArray(data.articles) ? data.articles : [];
+      return { ...item, count: articles.length, articles: articles.slice(0, 3).map(a => ({ title: a.title, source: a.sourceCountry || a.domain || '' })) };
+    }));
+    const regionalNews = results.map((r, i) => r.status === 'fulfilled' ? r.value : { ...queries[i], count: 0, articles: [] });
+    const total = regionalNews.reduce((s, x) => s + x.count, 0);
+    const max = Math.max(...regionalNews.map(x => x.count), 0);
+    const score = clamp(total * 0.85 + max * 1.15 + 18);
+    return { value: score, raw: { total, max, regionalNews }, label: score >= 70 ? '危機報道が増幅' : '危機報道を観測', source: 'GDELT' };
   } catch (e) {
-    const seed = Date.now() / 4700000;
-    return { value: pseudo(seed, 52, 15), raw: { regionNews: {} }, label: '世界情勢を推定観測', source: '推定' };
+    const seed = Date.now() / 5600000;
+    return { value: pseudo(seed, 50, 17), raw: { regionalNews: [] }, label: '危機報道を推定観測', source: '推定' };
   }
 }
 
@@ -136,47 +122,42 @@ function shippingMetric(air, market) {
   return { value, raw: { inferredFrom: ['air', 'market'] }, label: value >= 70 ? '海運の乱れが増幅' : '海運の乱れを推定観測', source: '推定' };
 }
 
-function level(score) {
-  if (score >= 85) return { level: '異常', roman: 'Ⅴ' };
-  if (score >= 70) return { level: '危険', roman: 'Ⅳ' };
-  if (score >= 50) return { level: '警戒', roman: 'Ⅲ' };
-  if (score >= 30) return { level: '注意', roman: 'Ⅱ' };
-  return { level: '平常', roman: 'Ⅰ' };
-}
+function level(score) { if (score >= 85) return { level: '異常', roman: 'Ⅴ' }; if (score >= 70) return { level: '危険', roman: 'Ⅳ' }; if (score >= 50) return { level: '警戒', roman: 'Ⅲ' }; if (score >= 30) return { level: '注意', roman: 'Ⅱ' }; return { level: '平常', roman: 'Ⅰ' }; }
 
 function regional(metrics) {
-  const { air, market, shipping, solar, world } = metrics;
-  const news = world.raw?.regionNews || {};
-  const n = name => clamp((news[name] || 0) * 1.25);
+  const { air, market, shipping, solar, crisis } = metrics;
+  const newsMap = {};
+  for (const n of crisis.raw?.regionalNews || []) newsMap[n.name] = n.count || 0;
+  const newsBoost = name => Math.min(22, (newsMap[name] || 0) * 0.7);
   const regions = [
-    ['中東方面', air.value * .30 + shipping.value * .26 + market.value * .14 + world.value * .22 + n('中東方面') * .25],
-    ['台湾海峡方面', air.value * .34 + shipping.value * .18 + solar.value * .10 + world.value * .22 + n('台湾海峡方面') * .25],
-    ['黒海方面', air.value * .24 + market.value * .22 + shipping.value * .18 + world.value * .22 + n('黒海方面') * .25],
-    ['日本周辺', air.value * .22 + solar.value * .26 + shipping.value * .14 + world.value * .18 + n('日本周辺') * .22],
-    ['米国本土方面', market.value * .32 + air.value * .18 + solar.value * .12 + world.value * .20 + n('米国本土方面') * .20],
-    ['北極圏方面', solar.value * .35 + air.value * .16 + world.value * .22 + n('北極圏方面') * .20]
+    ['中東方面', air.value * .30 + shipping.value * .26 + market.value * .14 + crisis.value * .24 + 8 + newsBoost('中東方面')],
+    ['台湾海峡方面', air.value * .32 + shipping.value * .18 + solar.value * .08 + crisis.value * .28 + 7 + newsBoost('台湾海峡方面')],
+    ['黒海方面', air.value * .25 + market.value * .20 + shipping.value * .16 + crisis.value * .30 + 6 + newsBoost('黒海方面')],
+    ['日本周辺', air.value * .22 + solar.value * .23 + shipping.value * .14 + crisis.value * .21 + 4 + newsBoost('日本周辺')],
+    ['米国本土方面', market.value * .30 + air.value * .17 + solar.value * .10 + crisis.value * .26 + 4 + newsBoost('米国本土方面')],
+    ['北極圏方面', solar.value * .35 + air.value * .16 + crisis.value * .22 + 8 + newsBoost('北極圏方面')]
   ];
-  return regions.map(([name, score]) => ({ name, score: clamp(score), news: news[name] || 0 })).sort((a, b) => b.score - a.score);
+  return regions.map(([name, score]) => ({ name, score: clamp(score), news: newsMap[name] || 0 })).sort((a, b) => b.score - a.score);
 }
 
 export default async function handler(req, res) {
   try {
-    const [air, market, solar, world] = await Promise.all([airMetric(), marketMetric(), solarMetric(), worldMetric()]);
+    const [air, market, solar, crisis] = await Promise.all([airMetric(), marketMetric(), solarMetric(), crisisMetric()]);
     const shipping = shippingMetric(air, market);
-    const doom = clamp(air.value * .28 + market.value * .22 + shipping.value * .18 + solar.value * .12 + world.value * .20);
+    const doom = clamp(air.value * .28 + market.value * .22 + shipping.value * .18 + solar.value * .12 + crisis.value * .20);
     const lv = level(doom);
-    const metrics = { air, market, shipping, solar, world };
+    const metrics = { air, market, shipping, solar, crisis };
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     res.status(200).json({ ok: true, updatedAt: new Date().toISOString(), doom, level: lv.level, roman: lv.roman, metrics, regions: regional(metrics) });
   } catch (e) {
     const air = { value: 55, source: 'fallback', label: '航空活動を推定観測', raw: {} };
     const market = { value: 48, source: 'fallback', label: '市場心理を推定観測', raw: {} };
     const solar = { value: 36, source: 'fallback', label: '太陽活動を推定観測', raw: {} };
-    const world = { value: 52, source: 'fallback', label: '世界情勢を推定観測', raw: { regionNews: {} } };
+    const crisis = { value: 52, source: 'fallback', label: '危機報道を推定観測', raw: { regionalNews: [] } };
     const shipping = shippingMetric(air, market);
-    const doom = clamp(air.value * .28 + market.value * .22 + shipping.value * .18 + solar.value * .12 + world.value * .20);
+    const doom = clamp(air.value * .28 + market.value * .22 + shipping.value * .18 + solar.value * .12 + crisis.value * .20);
     const lv = level(doom);
-    const metrics = { air, market, shipping, solar, world };
+    const metrics = { air, market, shipping, solar, crisis };
     res.status(200).json({ ok: true, updatedAt: new Date().toISOString(), doom, level: lv.level, roman: lv.roman, metrics, regions: regional(metrics), fallback: true });
   }
 }
