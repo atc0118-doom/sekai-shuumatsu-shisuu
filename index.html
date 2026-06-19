@@ -51,11 +51,28 @@ gtag('config', 'G-6BD36Q9VFB');
 </section>
 <section class="grid">
  <div class="card">
-  <h2>戦略監視レーダー</h2>
-  <div class="radar" id="radar"><div class="crossH"></div><div class="crossV"></div></div>
- </div>
+  <section class="grid">
  <div class="card">
-  <h2>方面別災厄指数</h2>
+  <h2>観測セクター</h2>
+
+  <div style="
+    color:#ff8b8b;
+    font-size:12px;
+    letter-spacing:.18em;
+    margin-top:-4px;
+    margin-bottom:12px;
+  ">
+    世界の異変を観測中
+  </div>
+
+  <div class="radar" id="radar">
+    <div class="crossH"></div>
+    <div class="crossV"></div>
+  </div>
+ </div>
+
+ <div class="card">
+  <h2>観測セクター分析</h2>
   <div class="regions" id="regions"></div>
   <div class="detail" id="detail"><h3>方面詳細</h3><p>方面を選択してください。</p></div>
  </div>
@@ -68,7 +85,7 @@ gtag('config', 'G-6BD36Q9VFB');
  <div class="card"><h2>7日推移</h2><div class="trendSummary" id="trendSummary">履歴を生成中</div><div class="trendGraph" id="trendGraph"></div><div class="historyBars" id="historyBars"></div></div>
  <div class="card"><h2>危険方面ランキング</h2><div class="ranking" id="regionRanking">順位生成中</div></div>
 </section>
-<section class="card"><h2>本日の観測報告</h2><div class="report" id="dailyReport">観測報告を生成中</div></section>
+<section class="card"><h2>観測報告</h2><div class="report" id="dailyReport">観測報告を生成中</div></section>
 <section class="card"><h2>終末観測アーカイブ</h2><div class="compare" id="archiveCompare"></div><table class="archive" id="archive"></table></section>
 <div class="footer">SAT-SYS-01 は公開情報をもとに観測指標を生成する。<br>本観測結果は予測ではなく、現在の観測状況を示すものである。</div>
 </div>
