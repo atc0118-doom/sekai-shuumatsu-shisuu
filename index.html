@@ -1,25 +1,58 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>終末観測盤 Ver5</title><link rel="stylesheet" href="style.css"></head><body>
-<main class="wrap">
-<section class="hero"><p class="kicker">REALTIME OBSERVATION / GDELT VIA VERCEL API</p><h1>終末観測盤</h1><p id="updated">起動中</p><p>15分ごと自動更新</p></section>
-<section class="meter"><div><p>現在指数</p><strong id="globalScore">--</strong><span id="level">--</span></div><div class="bar"><i></i></div></section>
-<section class="card"><h2>世界異変ランキング TOP20</h2><div id="ranking"></div></section>
-<section class="card news"><h2>観測ログ</h2><pre id="logs">待機中</pre></section>
-<section class="card post"><h2>半自動投稿文</h2><div class="buttons"><button onclick="copyPost()">コピー</button><button onclick="refreshNow()">手動更新</button></div><textarea id="postText" readonly></textarea></section>
-<footer>公開情報をもとに独自算出。予測・保証ではありません。</footer>
-</main><script src="gdelt.js"></script><script>
-  // 管理者URLだけ操作パネルを表示
-  document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(location.search);
-    const isAdmin = params.get("admin") === "doom";
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>終末観測盤 Ver5.1</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">REALTIME OBSERVATION / GDELT VIA VERCEL API</p>
+      <h1>終末観測盤</h1>
+      <p id="updated">起動中</p>
+      <p>15分ごと自動更新</p>
+    </section>
 
-    const headings = Array.from(document.querySelectorAll("h1,h2,h3,section,div"));
-    const adminBlock = headings.find(el =>
-      el.textContent && el.textContent.includes("半自動投稿文")
-    );
+    <section class="meter">
+      <div>
+        <p>現在指数</p>
+        <strong id="globalScore">--</strong>
+        <span id="level">--</span>
+      </div>
+      <div class="bar"><i id="meterBar"></i></div>
+    </section>
 
-    if (adminBlock) {
-      const panel = adminBlock.closest("section") || adminBlock;
-      panel.style.display = isAdmin ? "block" : "none";
-    }
-  });
-</script></body></html>
+    <section class="card">
+      <h2>世界異変ランキング TOP20</h2>
+      <div id="ranking">読み込み中...</div>
+    </section>
+
+    <section class="card news">
+      <h2>観測ニュース</h2>
+      <div id="newsList">ニュース取得待機中...</div>
+    </section>
+
+    <section class="card news">
+      <h2>観測ログ</h2>
+      <pre id="logs">待機中</pre>
+    </section>
+
+    <section id="adminPanel" class="card post admin-panel">
+      <h2>半自動投稿文</h2>
+      <div class="buttons">
+        <button onclick="makePost('朝')">朝</button>
+        <button onclick="makePost('昼')">昼</button>
+        <button onclick="makePost('夜')">夜</button>
+        <button onclick="copyPost()">コピー</button>
+        <button onclick="refreshNow()">手動更新</button>
+      </div>
+      <textarea id="postText" readonly>投稿文生成待機中</textarea>
+    </section>
+
+    <footer>公開情報をもとに独自算出。予測・保証ではありません。</footer>
+  </main>
+  <script src="gdelt.js"></script>
+</body>
+</html>
