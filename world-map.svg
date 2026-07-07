@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700">
+  <defs>
+    <radialGradient id="sea" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#26000a"/><stop offset="1" stop-color="#050205"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="700" fill="url(#sea)"/>
+  <g opacity=".18" stroke="#ff496b" stroke-width="1">
+    <path d="M0 100H1200M0 200H1200M0 300H1200M0 400H1200M0 500H1200M0 600H1200"/>
+    <path d="M100 0V700M200 0V700M300 0V700M400 0V700M500 0V700M600 0V700M700 0V700M800 0V700M900 0V700M1000 0V700M1100 0V700"/>
+  </g>
+  <g fill="#6e6a66" opacity=".63" stroke="#b7a9aa" stroke-opacity=".28" stroke-width="2">
+    <path d="M108 190l94-46 95 25 36 68-44 79-114 2-57-63z"/>
+    <path d="M246 330l102-35 72 46 36 129-55 96-103-20-47-99z"/>
+    <path d="M456 174l122-35 117 37 58 87-44 120-155 9-75-92z"/>
+    <path d="M610 276l66-33 73 29 29 79-50 66-85-20-42-63z"/>
+    <path d="M710 160l260-46 151 80-37 155-205 46-136-58z"/>
+    <path d="M818 380l151 26 75 116-94 82-119-26-43-103z"/>
+    <path d="M886 520l135 32 83 84-154 33-102-51z"/>
+  </g>
+  <g opacity=".18" fill="#ff244f" filter="url(#glow)">
+    <circle cx="625" cy="245" r="88"/><circle cx="760" cy="355" r="82"/><circle cx="920" cy="330" r="75"/>
+  </g>
+</svg>

@@ -1,1 +1,1 @@
-{"scripts":{"dev":"vercel dev"},"dependencies":{}}
+{"scripts":{"start":"vercel dev"},"dependencies":{}}
