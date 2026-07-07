@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>終末観測盤 V18</title>
+  <title>終末観測盤 V19</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -31,44 +31,15 @@
       <div id="trend" class="trend"></div>
     </section>
 
-    <section class="panel map-panel">
-      <h2><span></span>観測マップ</h2>
-      <div class="dot-map" id="worldMap" aria-label="戦域観測マップ">
-        <svg class="dot-world" viewBox="0 0 1000 430" role="img" aria-label="ドット世界地図" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <pattern id="landDots" width="8" height="8" patternUnits="userSpaceOnUse">
-              <circle cx="4" cy="4" r="2.2"></circle>
-            </pattern>
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="2.2" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <rect class="map-bg" x="0" y="0" width="1000" height="430"/>
-          <g class="grid-lines">
-            <path d="M0 80H1000 M0 160H1000 M0 240H1000 M0 320H1000 M0 400H1000"/>
-            <path d="M80 0V430 M160 0V430 M240 0V430 M320 0V430 M400 0V430 M480 0V430 M560 0V430 M640 0V430 M720 0V430 M800 0V430 M880 0V430 M960 0V430"/>
-          </g>
-          <g class="land" filter="url(#softGlow)">
-            <path d="M67,147 L94,116 L142,101 L193,112 L231,144 L252,192 L236,232 L196,250 L151,244 L110,220 L84,183 Z"/>
-            <path d="M215,250 L253,278 L278,337 L262,393 L226,426 L199,366 L190,306 Z"/>
-            <path d="M410,101 L469,79 L526,98 L577,85 L646,127 L690,176 L671,237 L598,252 L526,221 L468,237 L421,207 Z"/>
-            <path d="M493,244 L545,234 L572,283 L585,357 L562,402 L519,336 Z"/>
-            <path d="M611,214 L680,244 L713,312 L695,391 L654,340 L636,275 Z"/>
-            <path d="M688,141 L772,110 L868,122 L936,154 L955,206 L920,262 L841,278 L759,241 L711,199 Z"/>
-            <path d="M821,294 L898,312 L938,376 L907,414 L842,389 Z"/>
-            <path d="M777,72 L820,61 L845,75 L827,94 L790,91 Z"/>
-            <path d="M358,127 L384,113 L399,125 L371,141 Z"/>
-          </g>
-          <g class="map-routes">
-            <path d="M188,180 C360,62 520,96 663,190"/>
-            <path d="M540,133 C618,120 714,150 835,220"/>
-            <path d="M175,250 C352,299 514,294 665,236"/>
-          </g>
-          <text x="32" y="36" class="map-title">DOTTED WORLD MAP / LIVE RISK POINTS</text>
-        </svg>
+    <section class="panel region-panel">
+      <h2><span></span>重点観測地域</h2>
+      <div class="region-summary">
+        <div><b class="dot red"></b>重大</div>
+        <div><b class="dot orange"></b>警戒</div>
+        <div><b class="dot yellow"></b>注意</div>
       </div>
-      <div id="mapDetail" class="map-detail">地域をタップすると詳細を表示します。</div>
+      <div id="regionCards" class="region-cards"></div>
+      <div id="regionDetail" class="region-detail">地域カードをタップすると詳細を表示します。</div>
     </section>
 
     <section class="panel">
