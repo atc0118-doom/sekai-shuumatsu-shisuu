@@ -2,91 +2,95 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>終末観測盤 V19</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>終末観測盤 2.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="wrap">
-    <section class="panel hero">
-      <p class="kicker">REALTIME OBSERVATION / WORLD ANOMALY BOARD</p>
-      <h1>終末観測盤</h1>
-      <p><span id="now">--</span>　<span id="status">観測継続中</span></p>
-      <p>15分ごと自動更新</p>
-    </section>
-
-    <section class="panel score-panel">
-      <p>現在指数</p>
-      <div class="score-row"><strong id="globalScore">--</strong><span id="levelText">--</span></div>
-      <div class="meter"><i id="meterFill"></i></div>
-    </section>
-
-    <section class="panel focus-news">
-      <h2><span></span>本日の注目ニュース</h2>
-      <div id="focusNews"></div>
-    </section>
-
-    <section class="panel trend-panel">
-      <h2><span></span>24時間の危険度推移</h2>
-      <div id="trend" class="trend"></div>
-    </section>
-
-    <section class="panel region-panel">
-      <h2><span></span>重点観測地域</h2>
-      <div class="region-summary">
-        <div><b class="dot red"></b>重大</div>
-        <div><b class="dot orange"></b>警戒</div>
-        <div><b class="dot yellow"></b>注意</div>
+  <div class="bg"></div>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">WORLD RISK OBSERVATORY</p>
+        <h1>終末観測盤 2.0</h1>
+        <p class="sub">世界情勢を30秒で読むための観測システム</p>
       </div>
-      <div id="regionCards" class="region-cards"></div>
-      <div id="regionDetail" class="region-detail">地域カードをタップすると詳細を表示します。</div>
+      <div class="clock"><span id="updated">更新確認中</span></div>
+    </header>
+
+    <section class="hero card">
+      <div class="hero-left">
+        <p class="label">世界終末指数</p>
+        <div class="score-row"><span id="score" class="score">--</span><span class="slash">/100</span></div>
+        <div id="level" class="level">観測中</div>
+        <div id="delta" class="delta">24時間変動 --</div>
+      </div>
+      <div class="hero-right">
+        <div class="meter"><div id="meterFill"></div></div>
+        <p id="summary" class="summary">世界ニュースを取得しています。</p>
+      </div>
     </section>
 
-    <section class="panel">
-      <h2><span></span>急上昇国</h2>
-      <div id="rising" class="rising"></div>
+    <section class="grid-main">
+      <section class="card priority">
+        <div class="section-head">
+          <p class="label">TODAY</p>
+          <h2>本日の注目ニュース</h2>
+        </div>
+        <div id="topNews" class="news-list skeleton">取得中...</div>
+      </section>
+
+      <section class="card ai">
+        <div class="section-head">
+          <p class="label">AI OBSERVER</p>
+          <h2>AI観測分析</h2>
+        </div>
+        <p id="aiText">観測データを解析中です。</p>
+      </section>
     </section>
 
-    <section class="panel ranking-panel">
-      <h2><span></span>世界異変ランキング TOP20</h2>
-      <div id="ranking"></div>
+    <section class="grid-main second">
+      <section class="card">
+        <div class="section-head">
+          <p class="label">RANKING</p>
+          <h2>世界異変ランキング TOP10</h2>
+        </div>
+        <div id="ranking" class="ranking skeleton">取得中...</div>
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <p class="label">TREND</p>
+          <h2>7日推移</h2>
+        </div>
+        <svg id="trend" class="trend" viewBox="0 0 320 120" preserveAspectRatio="none"></svg>
+      </section>
     </section>
 
-    <section class="panel news-panel">
-      <h2><span></span>観測ニュース</h2>
-      <div id="newsList"></div>
+    <section class="card sources">
+      <div class="section-head">
+        <p class="label">SOURCES</p>
+        <h2>観測ソース</h2>
+      </div>
+      <p>公開ニュース・国際情勢データをもとに独自算出。数値は予測や保証ではありません。</p>
     </section>
 
-    <section class="panel">
-      <h2><span></span>AI観測分析</h2>
-      <div id="aiNote" class="ai-note">観測中。</div>
-    </section>
-
-    <section class="panel">
-      <h2><span></span>観測ログ</h2>
-      <pre id="logs">待機中</pre>
-    </section>
-
-    <section id="adminPanel" class="panel admin-panel">
-      <h2><span></span>半自動投稿文</h2>
+    <section id="adminPanel" class="card admin">
+      <div class="section-head">
+        <p class="label">ADMIN</p>
+        <h2>投稿ライター</h2>
+      </div>
       <div class="buttons">
         <button onclick="makePost('朝')">朝</button>
         <button onclick="makePost('昼')">昼</button>
         <button onclick="makePost('夜')">夜</button>
-        <button onclick="makePost('緊急')">緊急</button>
+        <button onclick="makePost('速報')">速報</button>
         <button onclick="makePost('AI')">AI観測</button>
         <button onclick="copyPost()">コピー</button>
       </div>
-      <textarea id="postText" rows="12">投稿文生成待機中</textarea>
+      <textarea id="postText" rows="10">投稿文生成待機中</textarea>
     </section>
-
-    <footer>公開情報をもとにした独自算出。予測・保証ではありません。</footer>
   </main>
   <script src="gdelt.js"></script>
-  <script>
-    const isAdmin = new URLSearchParams(location.search).get('admin') === 'doom';
-    const adminPanel = document.getElementById('adminPanel');
-    if (adminPanel && !isAdmin) adminPanel.style.display = 'none';
-  </script>
 </body>
 </html>
