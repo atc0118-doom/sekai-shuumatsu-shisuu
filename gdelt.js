@@ -16,16 +16,23 @@ $('aiFocus').innerHTML=`${data.ranking[0].flag} ${data.ranking[0].country}、${d
 $('aiAnalysis').innerHTML=`現在の指数は ${score}（${level(score)}）。複数地域で緊張は継続しています。出典付きニュースとランキングを照合し、急変兆候を監視しています。`;
 const values=[34,36,39,43,41,38,35,31,28,26,29,33,35,38,40,43,41,39,36,30,28,31,34,38];$('trend').innerHTML=values.map(v=>`<div class="bar" title="${v}" style="height:${Math.max(8,Math.min(100,v*1.7))}%"></div>`).join('');
 const svg=`<svg class="world-svg" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">
-<path class="land" d="M60 155 C100 95 190 75 275 120 C335 153 330 215 260 245 C175 280 85 245 60 155Z"/>
-<path class="land" d="M250 285 C335 250 405 285 415 360 C430 450 325 475 260 430 C205 390 200 320 250 285Z"/>
-<path class="land" d="M430 115 C520 70 650 85 735 140 C800 180 795 245 720 275 C610 320 475 270 430 115Z"/>
-<path class="land" d="M565 275 C640 245 735 285 745 365 C755 445 640 465 590 410 C545 360 525 305 565 275Z"/>
-<path class="land" d="M760 155 C845 95 930 130 955 210 C980 290 885 345 790 305 C715 270 695 205 760 155Z"/>
-<path class="land" d="M790 350 C855 335 925 375 940 435 C885 465 815 455 780 405 C760 380 765 360 790 350Z"/>
+<path class="land" d="M72 166 L118 132 L190 116 L247 146 L286 189 L258 235 L176 244 L112 225 Z"/>
+<path class="land" d="M205 250 L275 276 L304 336 L276 421 L215 458 L175 404 L155 335 Z"/>
+<path class="land" d="M382 142 L453 116 L528 132 L578 120 L665 151 L733 176 L758 219 L704 260 L610 251 L541 269 L458 246 L409 210 Z"/>
+<path class="land" d="M550 270 L615 288 L656 348 L633 424 L578 392 L553 336 Z"/>
+<path class="land" d="M708 194 L790 142 L898 157 L949 225 L900 294 L794 302 L735 260 Z"/>
+<path class="land" d="M820 334 L892 348 L930 401 L896 448 L827 431 L794 379 Z"/>
+<path class="land" d="M420 305 L485 292 L516 350 L489 402 L431 384 Z"/>
+<path class="coast" d="M80 200 C170 170 240 185 285 210 M390 180 C500 150 635 175 744 215 M718 232 C790 215 872 230 930 260"/>
+<path class="route" d="M575 170 C610 155 650 160 680 185 C715 218 720 230 756 235"/>
+<path class="route" d="M600 215 C635 245 665 270 710 282"/>
+<path class="route" d="M238 185 C365 110 500 115 590 170"/>
 </svg>`;
-const points=(data.ranking||fallback.ranking).slice(0,8).map(r=>`<button class="zone" data-level="${mapLevel(r.score)}" data-name="${r.country}" style="left:${x(r.lng)}%;top:${y(r.lat)}%" title="${r.country}" onclick="showMapInfo('${r.flag} ${r.country}',${r.score},'${r.label||'観測'}')">${r.flag}</button>`).join('');
-const legend=`<div class="map-legend"><span>🔴 重大</span><span>🟠 警戒</span><span>🟡 注意</span></div>`;
-$('map').innerHTML=svg+points+legend;
+const mapRows=(data.ranking||fallback.ranking).slice(0,8);
+const rings=mapRows.filter(r=>r.score>=60).map(r=>`<span class="hot-ring" style="left:${x(r.lng)}%;top:${y(r.lat)}%"></span>`).join('');
+const points=mapRows.map(r=>`<button class="zone" data-level="${mapLevel(r.score)}" data-name="${r.country}" style="left:${x(r.lng)}%;top:${y(r.lat)}%" title="${r.country}" onclick="showMapInfo('${r.flag} ${r.country}',${r.score},'${r.label||'観測'}')">${r.flag}</button>`).join('');
+const legend=`<div class="map-title">TACTICAL WORLD MAP / LIVE ZONES</div><div class="map-legend"><span>🔴 重大</span><span>🟠 警戒</span><span>🟡 注意</span></div>`;
+$('map').innerHTML=svg+rings+points+legend;
 $('mapInfo').innerHTML='<div class="map-cards">'+(data.ranking||fallback.ranking).slice(0,4).map(r=>`<div class="map-card"><strong>${r.flag} ${r.country}　${r.score}</strong><small>${r.label||'観測'} / 報道 ${r.reports||0}件</small></div>`).join('')+'</div>'} 
 window.showMapInfo=function(name,score,label){$('mapInfo').textContent=`${name}　危険度 ${score} / ${label}`}
 function topCountries(){return (currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag} ${r.country}`).join('・')}
