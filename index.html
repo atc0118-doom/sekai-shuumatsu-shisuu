@@ -1,9 +1,0 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>終末観測盤 Ver5</title><link rel="stylesheet" href="style.css"></head><body>
-<main class="wrap">
-<section class="hero"><p class="kicker">REALTIME OBSERVATION / GDELT VIA VERCEL API</p><h1>終末観測盤</h1><p id="updated">起動中</p><p>15分ごと自動更新</p></section>
-<section class="meter"><div><p>現在指数</p><strong id="globalScore">--</strong><span id="level">--</span></div><div class="bar"><i></i></div></section>
-<section class="card"><h2>世界異変ランキング TOP20</h2><div id="ranking"></div></section>
-<section class="card news"><h2>観測ログ</h2><pre id="logs">待機中</pre></section>
-<section class="card post"><h2>半自動投稿文</h2><div class="buttons"><button onclick="copyPost()">コピー</button><button onclick="refreshNow()">手動更新</button></div><textarea id="postText" readonly></textarea></section>
-<footer>公開情報をもとに独自算出。予測・保証ではありません。</footer>
-</main><script src="gdelt.js"></script></body></html>
