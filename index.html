@@ -6,4 +6,20 @@
 <section class="card news"><h2>観測ログ</h2><pre id="logs">待機中</pre></section>
 <section class="card post"><h2>半自動投稿文</h2><div class="buttons"><button onclick="copyPost()">コピー</button><button onclick="refreshNow()">手動更新</button></div><textarea id="postText" readonly></textarea></section>
 <footer>公開情報をもとに独自算出。予測・保証ではありません。</footer>
-</main><script src="gdelt.js"></script></body></html>
+</main><script src="gdelt.js"></script><script>
+  // 管理者URLだけ操作パネルを表示
+  document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(location.search);
+    const isAdmin = params.get("admin") === "doom";
+
+    const headings = Array.from(document.querySelectorAll("h1,h2,h3,section,div"));
+    const adminBlock = headings.find(el =>
+      el.textContent && el.textContent.includes("半自動投稿文")
+    );
+
+    if (adminBlock) {
+      const panel = adminBlock.closest("section") || adminBlock;
+      panel.style.display = isAdmin ? "block" : "none";
+    }
+  });
+</script></body></html>
