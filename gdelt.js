@@ -52,17 +52,102 @@ function render(data){
 }
 function topCountries(){return (currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag||""} ${r.country}`)}
 window.makePost=function(type){
-  const score=Number(currentData.global||35), lv=level(score), top=topCountries();
-  const comments=["数字は落ち着いていても、世界は止まってはいません。","静かな一日ほど、次の変化を見落とさないことが大切です。","危機は突然ではなく、小さな兆候の積み重ねから始まります。","世界は今日も回り続けています。観測を続けます。"]; 
-  const c=comments[Math.floor(Math.random()*comments.length)];
-  const news=(currentData.news&&currentData.news[0]?.title)||"世界各地で不安定な動きが続いています。";
+  const score=Number(currentData.global||35);
+  const countries=(currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag} ${r.country}`).join("・");
+  const news=(currentData.news||fallback.news).slice(0,2).map(n=>n.title).join("\n");
+  const newsText=(currentData.news||fallback.news).map(n=>n.title).join(" ");
+
+  const tags=[
+    "#終末観測盤","#世界情勢","#世界異変","#国際ニュース","#速報",
+    "#BreakingNews","#WorldNews","#Geopolitics","#GlobalRisk",
+    "#危機管理","#軍事","#防災","#地政学","#安全保障",
+    "#ニュース","#観測","#AI","#Ukraine","#Russia","#Iran","#Taiwan"
+  ];
+
+  if(newsText.includes("台湾")) tags.push("#台湾","#台湾海峡","#中国");
+  if(newsText.includes("ウクライナ")) tags.push("#NATO","#UkraineWar");
+  if(newsText.includes("イスラエル")) tags.push("#Israel","#MiddleEast");
+  if(newsText.includes("日本")) tags.push("#日本","#Japan");
+
+  const tagText=tags.join(" ");
+
   const posts={
-    "朝":`【朝の観測報告】\n\n世界終末指数\n${bar(score)} ${score} / 100\n危険度：${lv}\n\n現在の観測上位は\n${top.map(x=>`・${x}`).join("\n")}\n\n${news}\n\n【観測官コメント】\n${c}\n\n🌐終末観測盤\n${SITE_URL}\n\n#終末観測盤 #世界情勢 #国際ニュース #危機管理`,
-    "昼":`【昼の観測】\n\n世界異変ランキングを更新。\n\n現在の上位地域\n① ${top[0]}\n② ${top[1]}\n③ ${top[2]}\n\n終末指数：${score}（${lv}）\n\n${news}\n\n【観測官コメント】\n${c}\n\n🌐終末観測盤\n${SITE_URL}\n\n#終末観測盤 #地政学 #世界情勢`,
-    "夜":`【本日の観測まとめ】\n\n本日の世界終末指数\n${score}（${lv}）\n\n${top[0]}を中心に緊張状態が継続。\n\n${news}\n\n【観測官コメント】\n${c}\n\n明日も観測を続けます。\n\n🌐終末観測盤\n${SITE_URL}\n\n#終末観測盤 #世界情勢 #ニュース`,
-    "緊急":`⚠️【緊急観測】\n\n世界終末指数に大きな変動を観測。\n\n主な観測地域\n${top.map(x=>`・${x}`).join("\n")}\n\n詳細は終末観測盤で更新中。\n\n${SITE_URL}\n\n#速報 #終末観測盤 #世界情勢`,
-    "AI":`観測官より\n\n${c}\n\n現在の終末指数は ${score}（${lv}）。\n${top.join("・")} 周辺を中心に観測を継続しています。\n\n${news}\n\n観測継続中。\n\n#終末観測盤 #世界情勢`
+    "朝":`【朝の観測報告】
+
+世界終末指数 ${score}
+
+現在、${countries} 周辺を中心に観測を継続しています。
+
+${news}
+
+観測継続中。
+
+https://sekai-shuumatsu-shisuu.vercel.app
+
+${tagText}`,
+
+    "昼":`【昼の観測】
+
+世界異変ランキングを更新。
+
+現在の上位観測地域：
+${countries}
+
+終末指数：${score}
+
+${news}
+
+詳細は終末観測盤で確認。
+
+https://sekai-shuumatsu-shisuu.vercel.app
+
+${tagText}`,
+
+    "夜":`【本日の観測まとめ】
+
+本日の世界終末指数：${score}
+
+${countries} 周辺で緊張状態を観測。
+
+${news}
+
+明日も観測を継続します。
+
+https://sekai-shuumatsu-shisuu.vercel.app
+
+${tagText}`,
+
+    "緊急":`⚠️【緊急観測】
+
+世界終末指数に大きな変動を観測。
+
+主な観測地域：
+${countries}
+
+${news}
+
+詳細は終末観測盤で更新中。
+
+https://sekai-shuumatsu-shisuu.vercel.app
+
+${tagText}`,
+
+    "AI":`観測官より
+
+世界は静かに見えても、水面下では絶えず変化しています。
+
+現在の終末指数は ${score}。
+${countries} 周辺を中心に観測を継続しています。
+
+${news}
+
+観測継続中。
+
+https://sekai-shuumatsu-shisuu.vercel.app
+
+${tagText}`
   };
+
   $("postText").value=posts[type]||posts.AI;
 }
 window.copyPost=async function(){ const t=$("postText"); if(!t)return; try{await navigator.clipboard.writeText(t.value); alert("コピーしました");}catch(e){t.select();document.execCommand("copy");alert("コピーしました");}}
