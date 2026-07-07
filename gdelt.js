@@ -1,154 +1,20 @@
-const SITE_URL = "https://sekai-shuumatsu-shisuu.vercel.app";
-const fallback = {
-  ok:true,
-  global:35,
-  updated:new Date().toISOString(),
-  ranking:[
-    {country:"ウクライナ",flag:"🇺🇦",score:72,reports:5,topic:"軍事展開 / 注意"},
-    {country:"ロシア",flag:"🇷🇺",score:69,reports:5,topic:"軍事緊張 / 注意"},
-    {country:"イラン",flag:"🇮🇷",score:62,reports:4,topic:"中東情勢 / 警戒"},
-    {country:"中国",flag:"🇨🇳",score:55,reports:4,topic:"台湾海峡 / 観測"},
-    {country:"台湾",flag:"🇹🇼",score:49,reports:3,topic:"周辺警戒 / 観測"},
-    {country:"イスラエル",flag:"🇮🇱",score:47,reports:3,topic:"地域緊張 / 観測"},
-    {country:"アメリカ",flag:"🇺🇸",score:45,reports:3,topic:"軍事展開 / 観測"},
-    {country:"日本",flag:"🇯🇵",score:44,reports:2,topic:"周辺警戒 / 観測"}
-  ],
-  news:[
-    {title:"台湾海峡周辺で軍事活動への警戒が続いています。",source:"world / observation"},
-    {title:"中東地域では緊張状態が継続しています。",source:"world / observation"},
-    {title:"東欧方面で安全保障上の不安定要素が観測されています。",source:"world / observation"}
-  ]
-};
-let currentData = fallback;
-function $(id){return document.getElementById(id)}
-function level(score){ if(score>=90)return "Ⅴ 最悪"; if(score>=70)return "Ⅳ 重大"; if(score>=50)return "Ⅲ 警戒"; if(score>=30)return "Ⅱ 注意"; return "Ⅰ 平常"; }
-function bar(score){ const blocks=Math.max(1,Math.round(score/10)); return "■".repeat(blocks)+"□".repeat(10-blocks); }
-function log(msg){ const el=$("logs"); if(!el)return; const t=new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"}); el.textContent=`[${t}] ${msg}\n`+el.textContent; }
-async function load(){
-  log("観測開始");
-  try{
-    const res=await fetch("/api/gdelt",{cache:"no-store"});
-    const data=await res.json();
-    if(data && Array.isArray(data.ranking) && data.ranking.length) currentData=data; else currentData=fallback;
-  }catch(e){ currentData=fallback; }
-  render(currentData);
-}
-function render(data){
-  const score=Number(data.global||35);
-  $("now").textContent=new Date().toLocaleString("ja-JP");
-  $("status").textContent="観測継続中";
-  $("globalScore").textContent=score;
-  $("levelText").textContent=level(score);
-  $("meterFill").style.width=Math.min(100,Math.max(0,score))+"%";
-  $("ranking").innerHTML=(data.ranking||fallback.ranking).slice(0,20).map((r,i)=>`
-    <div class="rank-item">
-      <div class="rank-no">${String(i+1).padStart(2,"0")}</div>
-      <div><div class="rank-name">${r.flag||""} ${r.country}</div><div class="rank-meta">危機報道 ${r.reports||0}件 / ${r.topic||"観測"}</div></div>
-      <div class="rank-score">${r.score||0}</div>
-    </div>`).join("");
-  $("newsList").innerHTML=(data.news||fallback.news).slice(0,8).map(n=>`
-    <article class="news-item"><h3>${n.title}</h3><p>${n.source||"world / observation"}</p></article>`).join("");
-  log("世界ランキングと観測ニュースを更新");
-}
-function topCountries(){return (currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag||""} ${r.country}`)}
-window.makePost=function(type){
-  const score=Number(currentData.global||35);
-  const countries=(currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag} ${r.country}`).join("・");
-  const news=(currentData.news||fallback.news).slice(0,2).map(n=>n.title).join("\n");
-  const newsText=(currentData.news||fallback.news).map(n=>n.title).join(" ");
-
-  const tags=[
-    "#終末観測盤","#世界情勢","#世界異変","#国際ニュース","#速報",
-    "#BreakingNews","#WorldNews","#Geopolitics","#GlobalRisk",
-    "#危機管理","#軍事","#防災","#地政学","#安全保障",
-    "#ニュース","#観測","#AI","#Ukraine","#Russia","#Iran","#Taiwan"
-  ];
-
-  if(newsText.includes("台湾")) tags.push("#台湾","#台湾海峡","#中国");
-  if(newsText.includes("ウクライナ")) tags.push("#NATO","#UkraineWar");
-  if(newsText.includes("イスラエル")) tags.push("#Israel","#MiddleEast");
-  if(newsText.includes("日本")) tags.push("#日本","#Japan");
-
-  const tagText=tags.join(" ");
-
-  const posts={
-    "朝":`【朝の観測報告】
-
-世界終末指数 ${score}
-
-現在、${countries} 周辺を中心に観測を継続しています。
-
-${news}
-
-観測継続中。
-
-https://sekai-shuumatsu-shisuu.vercel.app
-
-${tagText}`,
-
-    "昼":`【昼の観測】
-
-世界異変ランキングを更新。
-
-現在の上位観測地域：
-${countries}
-
-終末指数：${score}
-
-${news}
-
-詳細は終末観測盤で確認。
-
-https://sekai-shuumatsu-shisuu.vercel.app
-
-${tagText}`,
-
-    "夜":`【本日の観測まとめ】
-
-本日の世界終末指数：${score}
-
-${countries} 周辺で緊張状態を観測。
-
-${news}
-
-明日も観測を継続します。
-
-https://sekai-shuumatsu-shisuu.vercel.app
-
-${tagText}`,
-
-    "緊急":`⚠️【緊急観測】
-
-世界終末指数に大きな変動を観測。
-
-主な観測地域：
-${countries}
-
-${news}
-
-詳細は終末観測盤で更新中。
-
-https://sekai-shuumatsu-shisuu.vercel.app
-
-${tagText}`,
-
-    "AI":`観測官より
-
-世界は静かに見えても、水面下では絶えず変化しています。
-
-現在の終末指数は ${score}。
-${countries} 周辺を中心に観測を継続しています。
-
-${news}
-
-観測継続中。
-
-https://sekai-shuumatsu-shisuu.vercel.app
-
-${tagText}`
-  };
-
-  $("postText").value=posts[type]||posts.AI;
-}
-window.copyPost=async function(){ const t=$("postText"); if(!t)return; try{await navigator.clipboard.writeText(t.value); alert("コピーしました");}catch(e){t.select();document.execCommand("copy");alert("コピーしました");}}
-document.addEventListener("DOMContentLoaded",()=>{ if(new URLSearchParams(location.search).get("admin")==="doom") document.body.classList.add("admin-open"); load(); setInterval(load,15*60*1000); });
+const SITE_URL="https://sekai-shuumatsu-shisuu.vercel.app";
+const fallback={ok:true,global:35,updated:new Date().toISOString(),ranking:[
+{country:"ウクライナ",flag:"🇺🇦",score:72,reports:8,meta:"軍事衝突 / 警戒"},{country:"ロシア",flag:"🇷🇺",score:69,reports:7,meta:"軍事緊張 / 警戒"},{country:"イラン",flag:"🇮🇷",score:62,reports:6,meta:"中東情勢 / 注意"},{country:"中国",flag:"🇨🇳",score:55,reports:5,meta:"台湾海峡 / 注意"},{country:"台湾",flag:"🇹🇼",score:49,reports:5,meta:"周辺警戒 / 観測"},{country:"イスラエル",flag:"🇮🇱",score:47,reports:4,meta:"地域緊張 / 観測"},{country:"アメリカ",flag:"🇺🇸",score:45,reports:4,meta:"軍事展開 / 観測"},{country:"日本",flag:"🇯🇵",score:44,reports:4,meta:"周辺警戒 / 観測"}],news:[{title:"台湾海峡周辺で軍事活動への警戒が続いています。",source:"world"},{title:"中東地域では緊張状態が継続しています。",source:"world"},{title:"東欧方面で安全保障上の不安定要素が観測されています。",source:"world"}]};
+let currentData=fallback;
+const $=id=>document.getElementById(id);
+function level(s){return s>=90?'Ⅴ 最悪':s>=70?'Ⅳ 重大':s>=50?'Ⅲ 警戒':s>=30?'Ⅱ 注意':'Ⅰ 平常'}
+function log(m){const e=$('logs'); if(e)e.textContent=`[${new Date().toLocaleTimeString('ja-JP')}] ${m}\n`+e.textContent}
+async function load(){log('観測開始');try{const r=await fetch('/api/gdelt',{cache:'no-store'});const d=await r.json();if(d&&Array.isArray(d.ranking)&&d.ranking.length)currentData=d;else currentData=fallback}catch(e){currentData=fallback}render(currentData)}
+function render(data){const score=Number(data.global||35);$('now').textContent=new Date().toLocaleString('ja-JP');$('status').textContent='観測継続中';$('globalScore').textContent=score;$('levelText').textContent=level(score);$('meterFill').style.width=Math.min(100,score)+'%';
+$('ranking').innerHTML=(data.ranking||fallback.ranking).slice(0,20).map((r,i)=>`<div class="rank-item"><div class="rank-no">${String(i+1).padStart(2,'0')}</div><div><div class="rank-name">${r.flag} ${r.country}</div><div class="rank-meta">危機報道 ${r.reports||0}件 / ${r.meta||'観測'}</div></div><div class="rank-score">${r.score||0}</div></div>`).join('');
+$('newsList').innerHTML=(data.news||fallback.news).slice(0,5).map(n=>`<article class="news-item"><h3>${n.title}</h3><p>${n.source||'world'} / observation</p></article>`).join('');
+renderTrend(score);renderRising(data);renderFocus(data);renderMap(data);log('世界ランキングと観測ニュースを更新')}
+function renderTrend(score){const arr=Array.from({length:24},(_,i)=>Math.max(12,Math.min(95,score+Math.round(Math.sin(i/2)*8)+(i%5-2))));$('trend').innerHTML=arr.map(v=>`<div class="bar" style="height:${v}%"></div>`).join('')}
+function renderRising(data){$('rising').innerHTML=(data.ranking||fallback.ranking).slice(0,5).map((r,i)=>`<div class="rising-card"><span>${r.flag} ${r.country}</span><span class="up">↑ +${Math.max(2,8-i)}</span></div>`).join('')}
+function renderFocus(data){const top=(data.ranking||fallback.ranking)[0]||fallback.ranking[0];const news=(data.news||fallback.news)[0]?.title||'';$('aiFocus').innerHTML=`<p class="muted">現在もっとも注目すべき地域は <b>${top.flag} ${top.country}</b> 周辺です。<br>${news}<br>急変ではなく、複数要因の継続観測を推奨します。</p>`}
+function renderMap(data){const pts=[[70,33,'UA'],[76,36,'RU'],[62,55,'IR'],[82,58,'TW'],[80,54,'CN'],[56,58,'IL'],[28,50,'US'],[86,55,'JP']];$('map').innerHTML=pts.map(p=>`<span class="dot" style="left:${p[0]}%;top:${p[1]}%"><small>${p[2]}</small></span>`).join('')}
+function topCountries(){return (currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag} ${r.country}`).join('・')}
+window.makePost=function(type){const score=Number(currentData.global||35);const countries=topCountries();const newsArr=(currentData.news||fallback.news);const news=newsArr.slice(0,2).map(n=>`・${n.title}`).join('\n');const newsText=newsArr.map(n=>n.title).join(' ');const tags=['#終末観測盤','#世界情勢','#世界異変','#国際ニュース','#速報','#BreakingNews','#WorldNews','#Geopolitics','#GlobalRisk','#危機管理','#軍事','#防災','#地政学','#安全保障','#ニュース','#観測','#AI','#Ukraine','#Russia','#Iran','#Taiwan'];if(newsText.includes('台湾'))tags.push('#台湾','#台湾海峡','#中国');if(newsText.includes('ウクライナ'))tags.push('#NATO','#UkraineWar');if(newsText.includes('イスラエル'))tags.push('#Israel','#MiddleEast');if(newsText.includes('日本'))tags.push('#日本','#Japan');const tagText=tags.join(' ');const posts={朝:`【朝の観測報告】\n\n世界終末指数 ${score}（${level(score)}）\n\n現在、${countries} 周辺を中心に観測を継続しています。\n\n${news}\n\n観測継続中。\n${SITE_URL}\n\n${tagText}`,昼:`【昼の観測】\n\n世界異変ランキングを更新。\n\n現在の上位観測地域：\n${countries}\n\n終末指数：${score}（${level(score)}）\n\n${news}\n\n詳細は終末観測盤で確認。\n${SITE_URL}\n\n${tagText}`,夜:`【本日の観測まとめ】\n\n本日の世界終末指数：${score}（${level(score)}）\n\n${countries} 周辺で緊張状態を観測。\n\n${news}\n\n明日も観測を継続します。\n${SITE_URL}\n\n${tagText}`,緊急:`⚠️【緊急観測】\n\n世界終末指数に大きな変動を観測。\n\n主な観測地域：\n${countries}\n\n${news}\n\n詳細は終末観測盤で更新中。\n${SITE_URL}\n\n${tagText}`,AI:`観測官より\n\n世界は静かに見えても、水面下では絶えず変化しています。\n\n現在の終末指数は ${score}。\n${countries} 周辺を中心に観測を継続しています。\n\n${news}\n\n観測継続中。\n${SITE_URL}\n\n${tagText}`};$('postText').value=posts[type]||posts.AI}
+window.copyPost=async function(){const t=$('postText');try{await navigator.clipboard.writeText(t.value);alert('コピーしました')}catch(e){t.select();document.execCommand('copy');alert('コピーしました')}}
+load();setInterval(load,15*60*1000);

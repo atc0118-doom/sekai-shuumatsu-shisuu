@@ -2,42 +2,62 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>終末観測盤 V10</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>終末観測盤 V11</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <main class="wrap">
-  <section class="hero card">
+  <section class="hero panel">
     <p class="kicker">REALTIME OBSERVATION / WORLD ANOMALY BOARD</p>
     <h1>終末観測盤</h1>
     <p><span id="now">--</span>　<span id="status">観測継続中</span></p>
     <p>15分ごと自動更新</p>
   </section>
 
-  <section class="card score-card">
+  <section class="panel score-panel">
     <p>現在指数</p>
     <div class="score-row"><strong id="globalScore">--</strong><span id="levelText">--</span></div>
     <div class="meter"><div id="meterFill"></div></div>
   </section>
 
-  <section class="card">
-    <h2>世界異変ランキング TOP20</h2>
-    <div id="ranking" class="ranking">読み込み中</div>
+  <section class="panel">
+    <h2><span></span>24時間危険度推移</h2>
+    <div id="trend" class="trend"></div>
   </section>
 
-  <section class="card">
-    <h2>観測ニュース</h2>
-    <div id="newsList" class="news">読み込み中</div>
+  <section class="panel">
+    <h2><span></span>急上昇国</h2>
+    <div id="rising">分析中...</div>
   </section>
 
-  <section class="card">
-    <h2>観測ログ</h2>
-    <pre id="logs">観測開始</pre>
+  <section class="panel">
+    <h2><span></span>世界異変ランキング TOP20</h2>
+    <div id="ranking">読み込み中...</div>
   </section>
 
-  <section id="adminPanel" class="card admin-panel">
-    <h2>半自動投稿文</h2>
+  <section class="panel">
+    <h2><span></span>観測ニュース</h2>
+    <div id="newsList">ニュース取得中...</div>
+  </section>
+
+  <section class="panel">
+    <h2><span></span>AI注目地域</h2>
+    <div id="aiFocus">分析中...</div>
+  </section>
+
+  <section class="panel map-panel">
+    <h2><span></span>観測マップ</h2>
+    <div class="map" id="map"></div>
+  </section>
+
+  <section class="panel logs-panel">
+    <h2><span></span>観測ログ</h2>
+    <pre id="logs">待機中</pre>
+  </section>
+
+  <section id="adminPanel" class="panel admin-panel">
+    <h2><span></span>半自動投稿文</h2>
     <div class="buttons">
       <button onclick="makePost('朝')">朝</button>
       <button onclick="makePost('昼')">昼</button>
@@ -46,11 +66,15 @@
       <button onclick="makePost('AI')">AI観測</button>
       <button onclick="copyPost()">コピー</button>
     </div>
-    <textarea id="postText" rows="10">投稿文生成待機中</textarea>
+    <textarea id="postText" rows="12">投稿文生成待機中</textarea>
   </section>
 
   <footer>公開情報をもとにした独自算出。予測・保証ではありません。</footer>
 </main>
 <script src="gdelt.js"></script>
+<script>
+const params=new URLSearchParams(location.search);
+if(params.get('admin')!=='doom') document.getElementById('adminPanel')?.remove();
+</script>
 </body>
 </html>
