@@ -15,8 +15,18 @@ $('risers').innerHTML=(data.ranking||fallback.ranking).slice(0,3).map((r,i)=>`<p
 $('aiFocus').innerHTML=`${data.ranking[0].flag} ${data.ranking[0].country}、${data.ranking[1].flag} ${data.ranking[1].country}、${data.ranking[2].flag} ${data.ranking[2].country} 周辺を重点観測。`;
 $('aiAnalysis').innerHTML=`現在の指数は ${score}（${level(score)}）。複数地域で緊張は継続しています。出典付きニュースとランキングを照合し、急変兆候を監視しています。`;
 const values=[34,36,39,43,41,38,35,31,28,26,29,33,35,38,40,43,41,39,36,30,28,31,34,38];$('trend').innerHTML=values.map(v=>`<div class="bar" title="${v}" style="height:${Math.max(8,Math.min(100,v*1.7))}%"></div>`).join('');
-const svg=`<svg class="world-svg" viewBox="0 0 1000 520" preserveAspectRatio="none"><path class="land" d="M80 130 L230 95 L315 140 L275 225 L130 220 Z M360 125 L510 90 L650 130 L610 230 L430 235 Z M655 150 L850 120 L930 210 L820 290 L690 250 Z M410 270 L530 255 L590 360 L470 390 Z M215 300 L340 275 L390 370 L250 415 Z M725 315 L850 325 L910 410 L770 435 Z"/></svg>`;
-$('map').innerHTML=svg+(data.ranking||fallback.ranking).map(r=>`<button class="zone" data-level="${mapLevel(r.score)}" style="left:${x(r.lng)}%;top:${y(r.lat)}%" title="${r.country}" onclick="showMapInfo('${r.flag} ${r.country}',${r.score},'${r.label||'観測'}')"></button>`).join('')}
+const svg=`<svg class="world-svg" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">
+<path class="land" d="M60 155 C100 95 190 75 275 120 C335 153 330 215 260 245 C175 280 85 245 60 155Z"/>
+<path class="land" d="M250 285 C335 250 405 285 415 360 C430 450 325 475 260 430 C205 390 200 320 250 285Z"/>
+<path class="land" d="M430 115 C520 70 650 85 735 140 C800 180 795 245 720 275 C610 320 475 270 430 115Z"/>
+<path class="land" d="M565 275 C640 245 735 285 745 365 C755 445 640 465 590 410 C545 360 525 305 565 275Z"/>
+<path class="land" d="M760 155 C845 95 930 130 955 210 C980 290 885 345 790 305 C715 270 695 205 760 155Z"/>
+<path class="land" d="M790 350 C855 335 925 375 940 435 C885 465 815 455 780 405 C760 380 765 360 790 350Z"/>
+</svg>`;
+const points=(data.ranking||fallback.ranking).slice(0,8).map(r=>`<button class="zone" data-level="${mapLevel(r.score)}" data-name="${r.country}" style="left:${x(r.lng)}%;top:${y(r.lat)}%" title="${r.country}" onclick="showMapInfo('${r.flag} ${r.country}',${r.score},'${r.label||'観測'}')">${r.flag}</button>`).join('');
+const legend=`<div class="map-legend"><span>🔴 重大</span><span>🟠 警戒</span><span>🟡 注意</span></div>`;
+$('map').innerHTML=svg+points+legend;
+$('mapInfo').innerHTML='<div class="map-cards">'+(data.ranking||fallback.ranking).slice(0,4).map(r=>`<div class="map-card"><strong>${r.flag} ${r.country}　${r.score}</strong><small>${r.label||'観測'} / 報道 ${r.reports||0}件</small></div>`).join('')+'</div>'} 
 window.showMapInfo=function(name,score,label){$('mapInfo').textContent=`${name}　危険度 ${score} / ${label}`}
 function topCountries(){return (currentData.ranking||fallback.ranking).slice(0,3).map(r=>`${r.flag} ${r.country}`).join('・')}
 function hashtags(){const newsText=(currentData.news||fallback.news).map(n=>n.title+n.area).join(' ');const tags=['#終末観測盤','#世界情勢','#世界異変','#国際ニュース','#速報','#BreakingNews','#WorldNews','#Geopolitics','#GlobalRisk','#危機管理','#軍事','#防災','#地政学','#安全保障','#ニュース','#観測','#AI','#Ukraine','#Russia','#Iran','#Taiwan'];if(newsText.includes('台湾'))tags.push('#台湾','#台湾海峡','#中国');if(newsText.includes('ウクライナ'))tags.push('#NATO','#UkraineWar');if(newsText.includes('イスラエル'))tags.push('#Israel','#MiddleEast');if(newsText.includes('日本'))tags.push('#日本','#Japan');return [...new Set(tags)].join(' ')}
