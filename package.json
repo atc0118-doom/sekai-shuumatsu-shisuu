@@ -1,8 +1,1 @@
-{
-  "name": "doomsday-vercel-api",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "start": "vercel dev"
-  }
-}
+{"scripts":{"dev":"vercel dev"},"dependencies":{}}
