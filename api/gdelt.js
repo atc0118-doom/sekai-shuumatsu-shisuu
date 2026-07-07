@@ -1,5 +1,6 @@
 const FALLBACK = {
-  ok: false,
+  ok: true,
+  fallback: true,
   source: 'stable-fallback',
   global: 35,
   ranking: [
