@@ -1,31 +1,16 @@
-const $ = id => document.getElementById(id);
-let latest = null;
-const fallback = {
-  ok:true, global:42, status:'観測継続中', source:'public-monitor',
-  ranking:[
-    {country:'ウクライナ',flag:'🇺🇦',score:72,reports:12,detail:'軍事衝突 / 継続監視'},
-    {country:'ロシア',flag:'🇷🇺',score:69,reports:11,detail:'軍事緊張 / 継続監視'},
-    {country:'イラン',flag:'🇮🇷',score:62,reports:9,detail:'中東情勢 / 警戒'},
-    {country:'中国',flag:'🇨🇳',score:55,reports:8,detail:'台湾海峡 / 警戒'},
-    {country:'台湾',flag:'🇹🇼',score:49,reports:7,detail:'周辺警戒 / 観測'},
-    {country:'イスラエル',flag:'🇮🇱',score:47,reports:6,detail:'地域情勢 / 観測'},
-    {country:'アメリカ',flag:'🇺🇸',score:45,reports:5,detail:'軍事展開 / 観測'},
-    {country:'日本',flag:'🇯🇵',score:38,reports:4,detail:'周辺情勢 / 観測'}
-  ],
-  news:[
-    {title:'台湾海峡周辺の軍事活動に関する警戒が継続',source:'world monitor',region:'Asia'},
-    {title:'中東地域で緊張状態が続き、各国が情勢を注視',source:'world monitor',region:'Middle East'},
-    {title:'欧州方面で防衛・安全保障に関する動きが継続',source:'world monitor',region:'Europe'}
-  ]
-};
-function jst(){return new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',hour12:false});}
-function level(score){if(score>=90)return'Ⅴ 最悪'; if(score>=70)return'Ⅳ 重大'; if(score>=50)return'Ⅲ 警戒'; if(score>=30)return'Ⅱ 注意'; return'Ⅰ 平常';}
-function log(msg){$('logs').textContent = `[${new Date().toLocaleTimeString('ja-JP',{hour12:false})}] ${msg}\n` + ($('logs').textContent||'');}
-function render(data){latest=data; $('now').textContent=jst(); $('status').textContent='観測継続中'; const score=Number(data.global||35); $('globalScore').textContent=score; $('levelText').textContent=level(score); $('meterFill').style.width=Math.min(100,Math.max(0,score))+'%';
- $('ranking').innerHTML=(data.ranking||[]).slice(0,20).map((r,i)=>`<div class="rank-row"><div class="rank-no">${String(i+1).padStart(2,'0')}</div><div><div class="country">${r.flag||''} ${r.country||'不明'}</div><div class="detail">危機報道 ${r.reports??0}件 / ${r.detail||'観測'}</div></div><div class="rank-score">${r.score??'-'}</div></div>`).join('')||'観測データ更新中';
- $('newsList').innerHTML=(data.news||[]).slice(0,10).map(n=>`<div class="news-item"><p class="news-title">${n.url?`<a href="${n.url}" target="_blank" rel="noopener">${n.title}</a>`:n.title}</p><div class="news-meta">${n.source||'public source'} / ${n.region||'world'}</div></div>`).join('')||'<div class="news-item"><p class="news-title">観測ニュースを更新中</p><div class="news-meta">world monitor</div></div>';
- log('世界ランキングと観測ニュースを更新');}
-async function load(){log('観測開始'); try{const res=await fetch('/api/gdelt',{cache:'no-store'}); const data=await res.json(); if(data && data.ok && (data.ranking?.length||data.news?.length)){render(data);} else {render(fallback); log('公開観測データを反映');}}catch(e){render(fallback); log('公開観測データを反映');}}
-function makePost(t){const top=(latest?.ranking||fallback.ranking).slice(0,3).map((r,i)=>`${i+1}. ${r.flag||''}${r.country} ${r.score}`).join('\n'); const text=`【${t}の観測】\n世界異変ランキングを更新。\n\n${top}\n\n現在指数：${$('globalScore').textContent}\n状態：${$('levelText').textContent}\n\n観測継続中。\n#終末観測盤 #世界情勢 #ニュース #危機管理 #地政学`; $('postText').value=text;}
-async function copyPost(){const t=$('postText').value; try{await navigator.clipboard.writeText(t); alert('コピーしました');}catch(e){alert('コピーできない場合は手動で選択してください');}}
-load(); setInterval(load,15*60*1000);
+const state={ranking:[],news:[],score:35,level:"Ⅱ：注意",updatedAt:null};
+const $=id=>document.getElementById(id);
+const comments=["静かな日ほど、世界は次の変化を準備しているかもしれません。","数字は落ち着いていても、世界は止まってはいません。","危機は突然ではなく、小さな変化の積み重ねから始まります。","観測値は未来を保証しません。ただ、変化の兆しを映します。","世界は今日も回り続けています。観測を継続します。"];
+const tags=["#終末観測盤 #世界情勢 #国際ニュース #危機管理 #防災","#終末観測盤 #地政学 #ニュース #世界情勢","#終末観測盤 #速報 #BreakingNews #世界情勢"];
+function jst(d=new Date()){return new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(d)}
+function level(score){if(score>=90)return"Ⅴ：最悪";if(score>=70)return"Ⅳ：重大";if(score>=50)return"Ⅲ：警戒";if(score>=30)return"Ⅱ：注意";return"Ⅰ：平常"}
+function fallback(){return{ok:true,updatedAt:new Date().toISOString(),ranking:[{country:"ウクライナ",flag:"🇺🇦",score:82,reports:12,keywords:"軍事衝突 / 重大"},{country:"ロシア",flag:"🇷🇺",score:78,reports:11,keywords:"軍事緊張 / 重大"},{country:"イラン",flag:"🇮🇷",score:71,reports:9,keywords:"中東緊張 / 警戒"},{country:"中国",flag:"🇨🇳",score:66,reports:8,keywords:"台湾海峡 / 警戒"},{country:"イスラエル",flag:"🇮🇱",score:64,reports:7,keywords:"地域衝突 / 警戒"},{country:"台湾",flag:"🇹🇼",score:59,reports:6,keywords:"軍事活動 / 注意"},{country:"アメリカ",flag:"🇺🇸",score:52,reports:5,keywords:"軍事展開 / 注意"},{country:"日本",flag:"🇯🇵",score:44,reports:4,keywords:"周辺警戒 / 観測"}],news:[{title:"東欧方面で軍事的緊張が継続",source:"観測ニュース",region:"Europe"},{title:"中東地域で不安定な情勢が続く",source:"観測ニュース",region:"Middle East"},{title:"東アジア周辺で警戒すべき動きを観測",source:"観測ニュース",region:"Asia"}]}}
+function render(data){state.ranking=(data.ranking||data.items||[]).slice(0,20);state.news=(data.news||[]).slice(0,10);state.score=Math.round(state.ranking.slice(0,5).reduce((a,b)=>a+(b.score||0),0)/Math.max(1,Math.min(5,state.ranking.length)))||35;state.level=level(state.score);state.updatedAt=data.updatedAt||new Date().toISOString();$('obsStatus').textContent='観測継続中';$('updatedAt').textContent=`更新 ${jst(new Date(state.updatedAt))}`;$('doomScore').textContent=state.score;$('doomLevel').textContent=state.level;$('doomBar').style.width=Math.min(100,state.score)+'%';$('ranking').innerHTML=state.ranking.map((r,i)=>`<div class="rank-item"><div class="rank-no">${String(i+1).padStart(2,'0')}</div><div><div class="country">${r.flag||''} ${r.country||r.name||'Unknown'}</div><div class="meta">${r.keywords||'観測継続'} / reports ${r.reports??'-'}</div></div><div class="risk">${r.score??'-'}</div></div>`).join('');$('newsList').innerHTML=(state.news.length?state.news:fallback().news).map(n=>`<div class="news-item"><div class="news-title">${n.title}</div><div class="news-meta">${n.source||'Observation'} / ${n.region||'World'}</div></div>`).join('');$('logs').textContent=`${jst()} 観測開始\n${jst()} 世界ランキング更新\n${jst()} ニュース更新`;}
+async function load(){try{const res=await fetch('/api/gdelt',{cache:'no-store'});const data=await res.json();if(!data.ok||res.status>=400)throw new Error('source limited');render(data)}catch(e){render(fallback())}}
+function top(n=3){return state.ranking.slice(0,n).map((r,i)=>`${i+1===1?'①':i+1===2?'②':i+1===3?'③':'・'} ${r.flag||''} ${r.country}`).join('\n')}
+function newsLines(n=1){return state.news.slice(0,n).map(x=>`・${x.title}`).join('\n')||'・世界各地で局地的な緊張が継続しています。'}
+function bar(){const filled=Math.round(state.score/10);return '■'.repeat(filled)+'□'.repeat(10-filled)}
+function comment(){return comments[Math.floor(Math.random()*comments.length)]}
+function makePost(type){let txt='';if(type==='morning')txt=`【朝の観測報告】\n\n世界終末指数\n${bar()} ${state.score} / 100\n危険度：${state.level}\n\n現在の観測では\n${top(3)}\n\nを中心に緊張状態が継続しています。\n\n${newsLines(1)}\n\n────────────\n【観測官コメント】\n${comment()}\n\n🌐 終末観測盤\nhttps://sekai-shuumatsu-shisuu.vercel.app\n\n${tags[0]}`;if(type==='noon')txt=`【昼の観測】\n\n世界異変ランキングを更新しました。\n\n現在の上位地域\n${top(3)}\n\n終末指数\n${state.score}（${state.level}）\n\n${newsLines(2)}\n\n────────────\n【観測官コメント】\n${comment()}\n\n🌐 終末観測盤\nhttps://sekai-shuumatsu-shisuu.vercel.app\n\n${tags[1]}`;if(type==='night')txt=`【本日の観測まとめ】\n\n本日の世界終末指数\n${state.score}（${state.level}）\n\n世界各地で局地的な緊張が続きました。\n\n${newsLines(2)}\n\n────────────\n【観測官コメント】\n${comment()}\n\n明日も観測を続けます。\n\n🌐 終末観測盤\nhttps://sekai-shuumatsu-shisuu.vercel.app\n\n#終末観測盤 #世界情勢 #ニュース`;if(type==='alert')txt=`⚠️【緊急観測】\n\n世界終末指数が ${state.score} まで上昇。\n\n現在観測されている主な地域\n${top(3)}\n\n${newsLines(2)}\n\n詳細は終末観測盤で更新中。\n\n🌐 https://sekai-shuumatsu-shisuu.vercel.app\n\n${tags[2]}`;if(type==='ai')txt=`観測官より\n\n${comment()}\n\n現在の世界終末指数は ${state.score}（${state.level}）。\n\n${top(3)}\n\n${newsLines(1)}\n\n観測継続中。\n\n🌐 終末観測盤\nhttps://sekai-shuumatsu-shisuu.vercel.app\n\n#終末観測盤 #世界情勢`; $('postText').value=txt;}
+async function copyPost(){const t=$('postText').value;try{await navigator.clipboard.writeText(t);$('obsStatus').textContent='投稿文をコピーしました'}catch(e){$('postText').select();document.execCommand('copy')}}
+window.makePost=makePost;window.copyPost=copyPost;document.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('admin')==='doom')document.body.classList.add('admin-open');load();setInterval(load,15*60*1000)});

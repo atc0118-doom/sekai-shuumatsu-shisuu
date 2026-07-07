@@ -2,61 +2,64 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>終末観測盤 V7</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>終末観測盤</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="scan"></div>
   <main class="app">
-    <section class="hero card">
-      <p class="kicker">REALTIME OBSERVATION / WORLD ANOMALY MONITOR</p>
+    <header class="hero">
+      <div class="eyebrow">WORLD ANOMALY OBSERVATORY</div>
       <h1>終末観測盤</h1>
-      <p class="meta"><span id="now">--</span>　<span id="status">観測継続中</span></p>
-      <p class="sub">公開情報をもとに世界情勢の変化を観測中</p>
-    </section>
+      <p class="subtitle">公開情報をもとに世界の異変を独自観測</p>
+      <div class="status-row">
+        <span id="obsStatus" class="badge">観測準備中</span>
+        <span id="updatedAt">--</span>
+      </div>
+    </header>
 
-    <section class="score card">
+    <section class="index-card">
       <div>
-        <p class="label">現在指数</p>
-        <div id="globalScore" class="score-num">--</div>
-        <p id="levelText" class="level">--</p>
+        <p class="label">世界終末指数</p>
+        <div class="score"><span id="doomScore">--</span><small>/100</small></div>
       </div>
-      <div class="meter"><span id="meterFill"></span></div>
+      <div class="meter-wrap">
+        <div class="meter"><div id="doomBar"></div></div>
+        <p id="doomLevel" class="level">観測中</p>
+      </div>
     </section>
 
-    <section class="card">
-      <h2><span></span>世界異変ランキング TOP20</h2>
-      <div id="ranking" class="ranking">読み込み中...</div>
+    <section class="panel">
+      <div class="section-head"><h2>世界異変ランキング</h2><span>TOP 20</span></div>
+      <div id="ranking" class="ranking"></div>
     </section>
 
-    <section class="card">
-      <h2><span></span>観測ニュース</h2>
-      <div id="newsList" class="news">ニュース取得中...</div>
+    <section class="panel">
+      <div class="section-head"><h2>観測ニュース</h2><span>Latest</span></div>
+      <div id="newsList" class="news"></div>
     </section>
 
-    <section class="card log-card">
-      <h2><span></span>観測ログ</h2>
-      <pre id="logs">観測開始</pre>
+    <section class="panel compact-log">
+      <div class="section-head"><h2>観測ログ</h2><span>JST</span></div>
+      <div id="logs" class="logs">観測開始待機中</div>
     </section>
 
-    <section id="adminPanel" class="card admin-panel">
-      <h2><span></span>半自動投稿文</h2>
+    <section id="adminPanel" class="panel admin-panel">
+      <div class="section-head"><h2>AI観測官 投稿システム</h2><span>Admin</span></div>
       <div class="buttons">
-        <button onclick="makePost('朝')">朝</button>
-        <button onclick="makePost('昼')">昼</button>
-        <button onclick="makePost('夜')">夜</button>
-        <button onclick="copyPost()">コピー</button>
+        <button onclick="makePost('morning')">🌅 朝</button>
+        <button onclick="makePost('noon')">☀️ 昼</button>
+        <button onclick="makePost('night')">🌙 夜</button>
+        <button onclick="makePost('alert')">🚨 緊急</button>
+        <button onclick="makePost('ai')">🤖 AI観測</button>
+        <button onclick="copyPost()">📋 コピー</button>
       </div>
-      <textarea id="postText" rows="9">投稿文生成待機中</textarea>
+      <textarea id="postText" rows="13" placeholder="投稿文生成待機中"></textarea>
     </section>
 
-    <footer>公開情報をもとにした独自算出。予測・保証ではありません。</footer>
+    <footer>公開情報をもとにした独自算出です。予測・保証ではありません。</footer>
   </main>
   <script src="gdelt.js"></script>
-  <script>
-    const admin = new URLSearchParams(location.search).get('admin') === 'doom';
-    const panel = document.getElementById('adminPanel');
-    if (panel && !admin) panel.style.display = 'none';
-  </script>
 </body>
 </html>

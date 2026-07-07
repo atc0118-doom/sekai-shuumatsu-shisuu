@@ -1,1 +1,1 @@
-{"name":"doomsday-v7","version":"7.0.0","private":true,"type":"module","scripts":{"start":"vercel dev"},"dependencies":{}}
+{"name":"doomsday-v8","version":"8.0.0","type":"module","scripts":{"start":"vercel dev"},"dependencies":{}}
