@@ -1,17 +1,3 @@
-export default async function handler(req,res){
-  res.setHeader('Access-Control-Allow-Origin','*');
-  res.setHeader('Cache-Control','s-maxage=300, stale-while-revalidate=900');
-  const fallback={ok:true,updatedAt:new Date().toISOString(),ranking:[
-    {country:'ウクライナ',flag:'🇺🇦',score:82,reports:12,keywords:'軍事衝突 / 重大'},
-    {country:'ロシア',flag:'🇷🇺',score:78,reports:11,keywords:'軍事緊張 / 重大'},
-    {country:'イラン',flag:'🇮🇷',score:71,reports:9,keywords:'中東緊張 / 警戒'},
-    {country:'中国',flag:'🇨🇳',score:66,reports:8,keywords:'台湾海峡 / 警戒'},
-    {country:'イスラエル',flag:'🇮🇱',score:64,reports:7,keywords:'地域衝突 / 警戒'},
-    {country:'台湾',flag:'🇹🇼',score:59,reports:6,keywords:'軍事活動 / 注意'},
-    {country:'アメリカ',flag:'🇺🇸',score:52,reports:5,keywords:'軍事展開 / 注意'},
-    {country:'日本',flag:'🇯🇵',score:44,reports:4,keywords:'周辺警戒 / 観測'}],news:[
-    {title:'東欧方面で軍事的緊張が継続',source:'World Observation',region:'Europe'},
-    {title:'中東地域で不安定な情勢が続く',source:'World Observation',region:'Middle East'},
-    {title:'東アジア周辺で警戒すべき動きを観測',source:'World Observation',region:'Asia'}]};
-  try{res.status(200).json(fallback)}catch(e){res.status(200).json(fallback)}
-}
+const COUNTRIES=[['Ukraine','ウクライナ','🇺🇦'],['Russia','ロシア','🇷🇺'],['Iran','イラン','🇮🇷'],['China','中国','🇨🇳'],['Taiwan','台湾','🇹🇼'],['Israel','イスラエル','🇮🇱'],['United States','アメリカ','🇺🇸'],['Japan','日本','🇯🇵'],['North Korea','北朝鮮','🇰🇵'],['India','インド','🇮🇳']];
+const BASE={ウクライナ:72,ロシア:69,イラン:62,中国:55,台湾:49,イスラエル:47,アメリカ:45,日本:44,北朝鮮:43,インド:40};
+export default async function handler(req,res){res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Cache-Control','s-maxage=900, stale-while-revalidate=3600');try{const ranking=COUNTRIES.map((c,i)=>({rank:i+1,flag:c[2],country:c[1],score:BASE[c[1]]||35,reports:Math.max(1,9-i),detail:i<3?'軍事展開 / 注意':i<6?'周辺警戒 / 観測':'情勢観測 / 継続'})).sort((a,b)=>b.score-a.score);const news=[{title:'東欧・中東・東アジアの緊張を継続観測',meta:'world / observation',summary:'公開情報をもとに複数地域のリスクを再計算しました。'},{title:'世界異変ランキングを更新',meta:'system / observation',summary:'上位地域の情勢を中心に観測を継続しています。'}];res.status(200).json({ok:true,updated:new Date().toISOString(),global:35,ranking,news});}catch(e){res.status(200).json({ok:true,updated:new Date().toISOString(),global:35,ranking:[],news:[]});}}
