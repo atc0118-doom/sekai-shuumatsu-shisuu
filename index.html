@@ -45,12 +45,72 @@ const REGIONS=[
  {id:'bolivia',flag:'🇧🇴',name:'ボリビア',keys:['bolivia','la paz']}
 ];
 const CRISIS=['war','strike','missile','drone','attack','military','sanction','nuclear','ceasefire','protest','riot','coup','conflict','troops','evacuation','explosion','crisis','blockade','naval','airstrike','dead','killed'];
+// 2026-07 改修版：ニュース件数だけで100に張り付かないように、平常値・変化量・重要語を分離して採点。
+const BASELINE={ukraine:26,russia:24,israel:20,iran:18,china:18,taiwan:16,blacksea:18,redsea:16,northkorea:15,sudan:16,drc:14,myanmar:14,pakistan:14,india:13,venezuela:12,serbia:11,haiti:11,usa:12,japan:10,bolivia:10};
+const KEYWORD_WEIGHTS={
+  'nuclear':26,'tactical nuclear':32,'missile':14,'ballistic':18,'drone':8,'airstrike':13,'strike':8,'attack':8,'explosion':10,
+  'war':10,'invasion':18,'troops':9,'military':7,'naval':10,'blockade':18,'evacuation':10,'dead':7,'killed':7,
+  'coup':18,'riot':9,'protest':5,'sanction':6,'crisis':7,
+  'ceasefire':-8,'talks':-4,'humanitarian':-5,'aid':-4
+};
 let state={ranking:[],news:[],global:0};
 function log(s){document.getElementById('log').textContent=`[${new Date().toLocaleTimeString('ja-JP')}] ${s}\n`+document.getElementById('log').textContent}
 function gdeltUrl(){const q=encodeURIComponent(`(${CRISIS.join(' OR ')}) sourceCountry:US`);return `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=ArtList&format=json&maxrecords=100&timespan=24h&sort=HybridRel`;}
 async function fetchGdelt(){log('GDELT取得開始');const res=await fetch(gdeltUrl());if(!res.ok)throw new Error('GDELT API error');const data=await res.json();return (data.articles||[]).map(a=>({title:a.title||'',url:a.url||'',source:a.sourceCommonName||'',time:a.seendate||'',text:((a.title||'')+' '+(a.domain||'')+' '+(a.socialimage||'')).toLowerCase()}));}
-function scoreRegions(articles){const prev=JSON.parse(localStorage.getItem('doomsday_scores')||'{}');const results=REGIONS.map(r=>{let hits=0;let crisisHits=0;let related=[];for(const a of articles){const t=(a.title+' '+a.text).toLowerCase();const matched=r.keys.some(k=>t.includes(k));if(matched){hits++; related.push(a); for(const c of CRISIS){if(t.includes(c)) crisisHits++;}}}
-let score=Math.min(100, Math.round(22 + hits*3.2 + crisisHits*0.7)); if(hits===0) score=Math.round(18+Math.random()*10); const old=prev[r.id]??score; const delta=score-old; return {...r,score,delta,hits,news:related.slice(0,3)};}).sort((a,b)=>b.score-a.score); const save={};results.forEach(r=>save[r.id]=r.score);localStorage.setItem('doomsday_scores',JSON.stringify(save));return results;}
+function scoreRegions(articles){
+  const prev=JSON.parse(localStorage.getItem('doomsday_scores')||'{}');
+  const prevHits=JSON.parse(localStorage.getItem('doomsday_hits')||'{}');
+  const results=REGIONS.map(r=>{
+    let hits=0;
+    let weightScore=0;
+    let related=[];
+    for(const a of articles){
+      const t=(a.title+' '+a.text).toLowerCase();
+      const matched=r.keys.some(k=>t.includes(k));
+      if(matched){
+        hits++;
+        related.push(a);
+        for(const [kw,w] of Object.entries(KEYWORD_WEIGHTS)){
+          if(t.includes(kw)) weightScore+=w;
+        }
+      }
+    }
+
+    const base=BASELINE[r.id]??12;
+    const oldHits=prevHits[r.id]??hits;
+    const hitDelta=hits-oldHits;
+
+    // 以前の「記事数×係数」方式を廃止。
+    // 配分：平常リスク20%、内容30%、変化量40%、継続/件数10%に近い考え方。
+    const normalRisk=base;
+    const contentRisk=Math.max(-10,Math.min(32,weightScore*0.18));
+    const changeRisk=Math.max(-12,Math.min(30,hitDelta*3.2));
+    const volumeRisk=Math.min(16,Math.log1p(hits)*5.5);
+
+    let raw=normalRisk+contentRisk+changeRisk+volumeRisk;
+
+    // ソフトキャップ：重大語がない通常報道では70台以上に上がりにくくする。
+    const hasSevere=related.some(a=>{
+      const t=(a.title+' '+a.text).toLowerCase();
+      return ['nuclear','ballistic','blockade','invasion','coup','airstrike'].some(k=>t.includes(k));
+    });
+    if(!hasSevere && raw>72) raw=72+(raw-72)*0.25;
+    if(hasSevere && raw>88) raw=88+(raw-88)*0.45;
+
+    let score=Math.round(Math.max(8,Math.min(100,raw)));
+    if(hits===0) score=Math.round(base+Math.random()*5);
+
+    const old=prev[r.id]??score;
+    const delta=score-old;
+    return {...r,score,delta,hits,news:related.slice(0,3)};
+  }).sort((a,b)=>b.score-a.score);
+
+  const save={}, saveHits={};
+  results.forEach(r=>{save[r.id]=r.score; saveHits[r.id]=r.hits;});
+  localStorage.setItem('doomsday_scores',JSON.stringify(save));
+  localStorage.setItem('doomsday_hits',JSON.stringify(saveHits));
+  return results;
+}
 function render(){const top=state.ranking.slice(0,20); const avg=top.slice(0,10).reduce((s,r)=>s+r.score,0)/10; state.global=Math.round(avg); document.getElementById('globalScore').textContent=state.global; document.getElementById('bar').style.width=state.global+'%'; document.getElementById('levelText').textContent=state.global>=70?'警戒水準Ⅳ':state.global>=50?'警戒水準Ⅲ':state.global>=30?'警戒水準Ⅱ 注意':'警戒水準Ⅰ'; document.getElementById('updatedAt').textContent=new Date().toLocaleString('ja-JP'); document.getElementById('signals').innerHTML=top.slice(0,5).map(r=>`<span class="pill">${r.flag} ${r.name} ${r.score}</span>`).join(''); document.getElementById('ranking').innerHTML=top.map((r,i)=>{let cls=r.delta>0?'up':r.delta<0?'down':'same';let d=r.delta>0?'↑'+r.delta:r.delta<0?'↓'+Math.abs(r.delta):'→';return `<div class="row"><div class="rank">${String(i+1).padStart(2,'0')}</div><div class="name">${r.flag} ${r.name}</div><div class="value">${r.score}</div><div class="delta ${cls}">${d}</div></div>`}).join(''); const related=[]; top.slice(0,8).forEach(r=>r.news.forEach(n=>{if(!related.find(x=>x.url===n.url)) related.push(n)})); state.news=related.slice(0,8); document.getElementById('news').innerHTML=state.news.map(n=>`<div class="news"><a href="${n.url}" target="_blank" rel="noopener">${escapeHtml(n.title)}</a><div class="meta">${escapeHtml(n.source)} / ${n.time||''}</div></div>`).join('')||'<div class="small">関連ニュースなし</div>';}
 function escapeHtml(s){return s.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function makePost(){const mode=document.getElementById('postMode').value;const label={morning:'朝の観測',noon:'昼の観測',night:'夜の観測',alert:'異常検知'}[mode];const top=state.ranking.slice(0,5);const rising=state.ranking.filter(r=>r.delta>0).sort((a,b)=>b.delta-a.delta).slice(0,3);const news=state.news.slice(0,3);let lines=[];lines.push(`**【${label}】**\n`);lines.push(`世界異変ランキングを更新。\n`);top.forEach((r,i)=>{const d=r.delta>0?`↑${r.delta}`:r.delta<0?`↓${Math.abs(r.delta)}`:'→';lines.push(`**${String(i+1).padStart(2,'0')} ${r.flag} ${r.name}　${r.score}（${d}）**`);});lines.push('');if(rising.length){lines.push(`本日の急上昇は、${rising.map(r=>`${r.flag}${r.name}（↑${r.delta}）`).join('、')}。`)}lines.push('');if(news.length){lines.push('📰 **関連ニュース**');news.forEach(n=>lines.push(`・${n.title}`));lines.push('');}lines.push('数値はGDELT危機報道と地域別観測値をもとに独自算出。');lines.push('小さな変化を見逃さず、世界の流れを継続観測します。\n');lines.push('#終末観測盤 #世界異変ランキング #終末観測 #世界終末指数 #GDELT #国際情勢 #世界ニュース #地政学 #危機管理 #異変検知 #GlobalRisk #Geopolitics #BreakingNews #観測継続中');document.getElementById('postText').value=lines.join('\n');}
