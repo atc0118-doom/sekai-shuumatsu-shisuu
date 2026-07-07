@@ -1,1 +1,1 @@
-{"version":2,"functions":{"api/gdelt.js":{"runtime":"nodejs20.x"}}}
+{"rewrites":[{"source":"/(.*)","destination":"/$1"}]}
